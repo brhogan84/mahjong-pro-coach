@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import ReactDOM from 'react-dom/client'; // Required for deployment
 import { 
   Trophy, RotateCcw, ArrowRight, Layers, Play, BookOpen, User, 
   Cpu, AlertCircle, ShieldAlert, ThumbsUp, TrendingUp, X, 
@@ -103,7 +104,7 @@ const HandCode = ({ parts }) => (
   </div>
 );
 
-export default function App() {
+function App() {
   const [gameState, setGameState] = useState('menu');
   const [deck, setDeck] = useState([]);
   const [hand, setHand] = useState([]);
@@ -301,8 +302,8 @@ export default function App() {
           <div className="flex items-center gap-3">
             <Brain className="w-8 h-8 text-orange-500" />
             <div>
-              <h1 className="text-xl font-black text-yellow-400 uppercase leading-none tracking-tight">Pro Coach V10.1</h1>
-              <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-1 italic tracking-tighter">Strategic Trainer</p>
+              <h1 className="text-xl font-black text-yellow-400 uppercase leading-none tracking-tight tracking-tighter">Strategic Trainer</h1>
+              <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-1 italic tracking-tighter uppercase">Intelligent Mahjong Lab</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -331,8 +332,8 @@ export default function App() {
             <div className="text-center py-16 animate-in fade-in zoom-in space-y-8">
               <Zap className="w-14 h-14 text-orange-500 mx-auto" />
               <div className="space-y-2">
-                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Intelligent Mastery.</h2>
-                <p className="max-w-sm mx-auto text-slate-500 text-sm font-medium italic">Integrated coaching feedback, custom hand lab, and rack organization tools.</p>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Verified Logic.</h2>
+                <p className="max-w-sm mx-auto text-slate-500 text-sm font-medium italic">Experience selection-aware coaching and session-persistent hand creation.</p>
               </div>
               <div className="flex flex-col md:flex-row gap-4 justify-center">
                 <button onClick={initGame} className="px-12 py-5 bg-orange-600 hover:bg-orange-700 text-white rounded-[2rem] font-black text-lg shadow-xl flex items-center justify-center gap-2 transition-all"><Play className="w-6 h-6 fill-current" /> Start Session</button>
@@ -344,8 +345,8 @@ export default function App() {
           {gameState === 'creator' && (
             <div className="space-y-4 animate-in slide-in-from-right-4">
               <div className="flex justify-between items-center px-2">
-                <h3 className="text-xl font-black uppercase text-slate-700 flex items-center gap-2"><Brain className="w-5 h-5 text-blue-600" /> Designer Lab</h3>
-                <button onClick={() => setGameState('menu')} className="text-slate-400 hover:text-red-500 transition-colors"><X /></button>
+                <h3 className="text-xl font-black uppercase text-slate-700 flex items-center gap-2 tracking-tighter uppercase"><Brain className="w-5 h-5 text-blue-600" /> Designer Lab</h3>
+                <button onClick={() => setGameState('menu')} className="text-slate-400 hover:text-red-500"><X /></button>
               </div>
               {creatorError && <div className="bg-red-50 border-2 border-red-200 p-4 rounded-2xl flex items-center gap-3 text-red-600 animate-in shake"><AlertTriangle className="w-5 h-5" /><p className="text-xs font-bold uppercase">{creatorError}</p></div>}
               <div className="bg-slate-50 p-5 rounded-[2rem] border-2 border-slate-200 space-y-4 shadow-inner">
@@ -369,20 +370,21 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                <button onClick={saveCustomHand} disabled={creatorBuffer.length !== 14} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl hover:bg-black transition-all"><Save className="w-4 h-4" /> Save Hand</button>
+                <button onClick={saveCustomHand} disabled={creatorBuffer.length !== 14} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl hover:bg-black transition-all flex items-center justify-center gap-2"><Save className="w-4 h-4" /> Save Hand</button>
               </div>
             </div>
           )}
 
           {(gameState === 'charleston' || gameState === 'playing' || gameState === 'finished') && (
             <div className="space-y-4 animate-in fade-in">
+              {/* PINNED */}
               <div className="flex justify-center gap-2 min-h-[60px]">
                 {pinnedHandIds.map(id => {
                   const h = fullLibrary.find(x => x.id === id);
                   if (!h) return null;
                   return (
                     <div key={id} className="bg-white border-2 border-blue-100 p-2.5 rounded-2xl shadow-md w-72 relative animate-in slide-in-from-top-4">
-                      <p className="text-[8px] font-black text-blue-600 uppercase mb-1 flex justify-between"><span>{h.name}</span><PinOff className="w-2.5 h-2.5 text-slate-300 cursor-pointer" onClick={() => togglePin(id)} /></p>
+                      <p className="text-[8px] font-black text-blue-600 uppercase mb-1 flex justify-between tracking-tighter"><span>{h.name}</span><PinOff className="w-2.5 h-2.5 text-slate-300 cursor-pointer" onClick={() => togglePin(id)} /></p>
                       <HandCode parts={h.parts} />
                     </div>
                   );
@@ -393,8 +395,8 @@ export default function App() {
                 <div className="md:col-span-9 bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center gap-3 shadow-sm">
                   <div className={`p-2 rounded-xl ${gameState === 'charleston' ? 'bg-orange-600' : 'bg-green-600'} text-white shadow-md`}><User className="w-5 h-5" /></div>
                   <div className="overflow-hidden">
-                    <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">{gameState === 'charleston' ? `Pass: ${steps[charlestonStep]}` : 'Active Session'}</p>
-                    <p className="font-black text-slate-800 text-xs truncate uppercase tracking-tighter">{message}</p>
+                    <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1 tracking-tighter">{gameState === 'charleston' ? `Pass: ${steps[charlestonStep]}` : 'Active Session'}</p>
+                    <p className="font-black text-slate-800 text-xs truncate tracking-tighter">{message}</p>
                   </div>
                 </div>
                 <div className="md:col-span-3 bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-between shadow-xl">
@@ -411,8 +413,8 @@ export default function App() {
                      {realTimeFeedback?.color === 'red' ? <AlertTriangle className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                    </div>
                    <div className="pr-4">
-                     <p className="text-[8px] font-black uppercase opacity-60 leading-none mb-1">Coach Reasoning</p>
-                     <p className="text-xs font-bold leading-tight italic">{aiSuggestionReason || realTimeFeedback?.msg}</p>
+                     <p className="text-[8px] font-black uppercase opacity-60 leading-none mb-1 uppercase tracking-tighter">Coach Reasoning</p>
+                     <p className="text-xs font-bold leading-tight italic tracking-tighter uppercase">{aiSuggestionReason || realTimeFeedback?.msg}</p>
                    </div>
                 </div>
               )}
@@ -422,10 +424,10 @@ export default function App() {
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <Target className="w-5 h-5 text-orange-500" />
-                      <p className="font-black text-sm text-slate-800 uppercase tracking-tighter">{bestMatch.name}</p>
+                      <p className="font-black text-sm text-slate-800 uppercase tracking-tighter tracking-tighter">{bestMatch.name}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-black text-orange-600">{bestMatch.pct}% Match</span>
+                      <span className="text-2xl font-black text-orange-600 tracking-tighter uppercase">{bestMatch.pct}% Match</span>
                       <button onClick={() => setBestMatch(null)} className="text-slate-400 hover:text-red-500"><X className="w-5 h-5" /></button>
                     </div>
                   </div>
@@ -435,7 +437,7 @@ export default function App() {
 
               <div className="bg-slate-50 p-4 md:p-8 rounded-[3rem] border-2 border-slate-200 shadow-inner min-h-[450px] flex flex-col justify-between relative overflow-hidden">
                 <div className="flex flex-wrap justify-center gap-3 mb-3 min-h-[30px] border-b border-slate-200 pb-3">
-                  {exposures.length === 0 && <span className="text-[8px] font-black uppercase text-slate-300 italic tracking-[0.2em]">Exposures Row</span>}
+                  {exposures.length === 0 && <span className="text-[8px] font-black uppercase text-slate-300 italic tracking-widest tracking-tighter uppercase">Exposures row</span>}
                   {exposures.map((set, i) => (
                     <div key={i} className="flex bg-white/70 p-1 rounded-lg border border-slate-200 shadow-sm animate-in zoom-in">{set.map(t => <Tile key={t.id} tile={t} size="sm" isExposed={true} />)}</div>
                   ))}
@@ -465,7 +467,7 @@ export default function App() {
                       </div>
                     </div>
                   ) : (
-                    <div className="opacity-10 flex flex-col items-center gap-2"><div className="w-16 h-24 border-2 border-dashed border-slate-400 rounded-2xl shadow-inner"></div><p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Discard Field</p></div>
+                    <div className="opacity-10 flex flex-col items-center gap-2"><div className="w-16 h-24 border-2 border-dashed border-slate-400 rounded-2xl shadow-inner"></div><p className="text-[8px] font-black uppercase text-slate-400 tracking-widest tracking-tighter uppercase">Discard Field</p></div>
                   )}
                 </div>
 
@@ -495,23 +497,23 @@ export default function App() {
                 <div className="mt-6 flex justify-center gap-3 min-h-[50px]">
                   {gameState === 'charleston' ? (
                     <div className="flex gap-2">
-                      <button onClick={suggestPass} className="px-6 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-[9px] flex items-center gap-2 uppercase tracking-widest hover:bg-slate-50 shadow-md transition-all"><Brain className="w-4 h-4 text-orange-500" /> AI Suggest</button>
-                      <button onClick={processPass} disabled={selectedIndices.length !== 3} className={`px-10 py-3 rounded-xl font-black flex items-center gap-3 shadow-xl transition-all text-xs ${selectedIndices.length === 3 ? 'bg-slate-900 text-white hover:bg-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed uppercase'}`}>Confirm Pass</button>
+                      <button onClick={suggestPass} className="px-6 py-3 bg-white border-2 border-slate-200 rounded-xl font-black text-[9px] flex items-center gap-2 uppercase tracking-widest hover:bg-slate-50 shadow-md transition-all uppercase tracking-tighter"><Brain className="w-4 h-4 text-orange-500" /> AI Suggest</button>
+                      <button onClick={processPass} disabled={selectedIndices.length !== 3} className={`px-10 py-3 rounded-xl font-black flex items-center gap-3 shadow-xl transition-all text-xs ${selectedIndices.length === 3 ? 'bg-slate-900 text-white hover:bg-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed uppercase'} uppercase tracking-tighter`}>Confirm Pass</button>
                     </div>
                   ) : pendingDiscardIdx !== null ? (
                     <div className="flex gap-2 animate-in slide-in-from-bottom-2">
-                       <button onClick={() => setPendingDiscardIdx(null)} className="px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors">Cancel</button>
-                       <button onClick={confirmDiscard} className="px-10 py-3 bg-red-600 text-white rounded-xl font-black flex items-center gap-2 shadow-lg text-xs hover:bg-red-700 transition-all uppercase tracking-widest">Discard</button>
+                       <button onClick={() => setPendingDiscardIdx(null)} className="px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors uppercase tracking-tighter">Cancel</button>
+                       <button onClick={confirmDiscard} className="px-10 py-3 bg-red-600 text-white rounded-xl font-black flex items-center gap-2 shadow-lg text-xs hover:bg-red-700 transition-all uppercase tracking-widest uppercase tracking-tighter">Discard</button>
                     </div>
                   ) : gameState === 'playing' && (
-                    <button onClick={identifyBestHand} className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm flex items-center gap-2 shadow-2xl active:scale-95 uppercase tracking-widest transition-all"><Target className="w-4 h-4 text-yellow-400" /> Hand Identify</button>
+                    <button onClick={identifyBestHand} className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm flex items-center gap-2 shadow-2xl active:scale-95 uppercase tracking-widest transition-all uppercase tracking-tighter"><Target className="w-4 h-4 text-yellow-400" /> Identify Progress</button>
                   )}
                 </div>
               </div>
 
               {/* HISTORY */}
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm h-24 opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all">
-                <h4 className="text-[8px] font-black text-slate-400 uppercase mb-2 tracking-[0.2em] font-black uppercase"><Search className="w-2.5 h-2.5 inline mr-1" /> Discard History</h4>
+                <h4 className="text-[8px] font-black text-slate-400 uppercase mb-2 tracking-[0.2em] uppercase tracking-tighter"><Search className="w-2.5 h-2.5 inline mr-1" /> Discard History</h4>
                 <div className="flex flex-wrap gap-1 content-start">{discards.map((t, i) => <div key={i} className="scale-75"><Tile tile={t} size="sm" /></div>)}</div>
               </div>
             </div>
@@ -520,12 +522,12 @@ export default function App() {
           {showCard && (
             <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white w-full max-w-4xl max-h-[85vh] rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in">
-                <div className="p-5 bg-slate-50 border-b flex justify-between items-center"><h3 className="font-black text-slate-800 uppercase tracking-widest text-sm tracking-tighter flex items-center gap-2"><BookOpen className="w-4 h-4" /> Library</h3><button onClick={() => setShowCard(false)} className="p-1 text-slate-400 hover:text-red-500 transition-colors"><X /></button></div>
+                <div className="p-5 bg-slate-50 border-b flex justify-between items-center"><h3 className="font-black text-slate-800 uppercase tracking-widest text-sm tracking-tighter uppercase tracking-tighter">Hand Library (35)</h3><button onClick={() => setShowCard(false)} className="p-1 text-slate-400 hover:text-red-500 transition-colors"><X /></button></div>
                 <div className="flex-1 overflow-y-auto p-5 space-y-8 pb-20 scrollbar-hide">
                   {sessionCustomHands.length > 0 && (
-                    <div><h4 className="text-blue-600 font-black text-xs uppercase tracking-widest mb-4 border-b-2 border-blue-100 pb-1">Session Custom Targets</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{sessionCustomHands.map(h => (<div key={h.id} className="p-4 bg-blue-50/50 rounded-2xl border-2 border-blue-200 relative shadow-sm"><button onClick={() => togglePin(h.id)} className={`absolute top-3 right-3 p-1.5 rounded-full transition-all ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3.5 h-3.5" /></button><div className="font-black text-slate-800 text-sm mb-2 uppercase">{h.name}</div><div className="bg-white p-3 rounded-xl border border-slate-200 mb-2 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[9px] font-bold text-slate-400 uppercase leading-snug">{h.desc}</div><button onClick={() => setSessionCustomHands(p => p.filter(x => x.id !== h.id))} className="mt-3 text-red-400 text-[8px] font-black uppercase flex items-center gap-1 hover:text-red-600"><Trash className="w-2.5 h-2.5" /> Remove</button></div>))}</div></div>
+                    <div><h4 className="text-blue-600 font-black text-xs uppercase tracking-widest mb-4 border-b-2 border-blue-100 pb-1 uppercase tracking-tighter">Session Custom Targets</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{sessionCustomHands.map(h => (<div key={h.id} className="p-4 bg-blue-50/50 rounded-2xl border-2 border-blue-200 relative shadow-sm"><button onClick={() => togglePin(h.id)} className={`absolute top-3 right-3 p-1.5 rounded-full transition-all ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3.5 h-3.5" /></button><div className="font-black text-slate-800 text-sm mb-2 uppercase uppercase tracking-tighter">{h.name}</div><div className="bg-white p-3 rounded-xl border border-slate-200 mb-2 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[9px] font-bold text-slate-400 uppercase leading-snug tracking-tighter">{h.desc}</div><button onClick={() => setSessionCustomHands(p => p.filter(x => x.id !== h.id))} className="mt-3 text-red-400 text-[8px] font-black uppercase flex items-center gap-1 hover:text-red-600 transition-colors uppercase tracking-tighter"><Trash className="w-2.5 h-2.5" /> Remove</button></div>))}</div></div>
                   )}
-                  <div><h4 className="text-slate-400 font-black text-xs uppercase tracking-widest mb-4 border-b-2 border-slate-100 pb-1">Standard Library</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{STANDARD_TEMPLATES.map(h => (<div key={h.id} className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 relative shadow-sm hover:border-blue-300 transition-colors"><button onClick={() => togglePin(h.id)} className={`absolute top-3 right-3 p-1.5 rounded-full transition-all ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3.5 h-3.5" /></button><div className="flex justify-between font-black text-[8px] text-blue-600 uppercase mb-1"><span>{h.section} | {h.type}</span></div><div className="font-black text-slate-800 text-sm mb-2 uppercase">{h.name}</div><div className="bg-white p-3 rounded-xl border border-slate-200 mb-2 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[9px] font-bold text-slate-400 uppercase leading-snug">{h.desc}</div></div>))}</div></div>
+                  <div><h4 className="text-slate-400 font-black text-xs uppercase tracking-widest mb-4 border-b-2 border-slate-100 pb-1 uppercase tracking-tighter">Standard Library</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{STANDARD_TEMPLATES.map(h => (<div key={h.id} className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-100 relative shadow-sm hover:border-blue-300 transition-colors"><button onClick={() => togglePin(h.id)} className={`absolute top-3 right-3 p-1.5 rounded-full transition-all ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3.5 h-3.5" /></button><div className="flex justify-between font-black text-[8px] text-blue-600 uppercase mb-1 uppercase tracking-tighter"><span>{h.section} | {h.type}</span></div><div className="font-black text-slate-800 text-sm mb-2 uppercase uppercase tracking-tighter">{h.name}</div><div className="bg-white p-3 rounded-xl border border-slate-200 mb-2 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[9px] font-bold text-slate-400 uppercase leading-snug tracking-tighter uppercase tracking-tighter">{h.desc}</div></div>))}</div></div>
                 </div>
               </div>
             </div>
@@ -535,8 +537,8 @@ export default function App() {
             <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
               <div className="bg-white rounded-[3rem] p-12 max-w-sm w-full text-center border-b-8 border-orange-600 shadow-2xl">
                 <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6 shadow-sm" />
-                <h2 className="text-4xl font-black text-slate-900 leading-none tracking-tighter uppercase">Training Over</h2>
-                <button onClick={initGame} className="w-full py-5 bg-orange-600 text-white rounded-[2rem] font-black text-lg hover:bg-orange-700 shadow-xl transition-all">RESTART</button>
+                <h2 className="text-4xl font-black text-slate-900 leading-none tracking-tighter uppercase uppercase tracking-tighter">Training Ended</h2>
+                <button onClick={initGame} className="w-full py-5 bg-orange-600 text-white rounded-[2rem] font-black text-lg hover:bg-orange-700 shadow-xl transition-all uppercase tracking-tighter">RESTART</button>
               </div>
             </div>
           )}
@@ -545,3 +547,7 @@ export default function App() {
     </div>
   );
 }
+
+// THE BRIDGE: This is why the screen was blank
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
