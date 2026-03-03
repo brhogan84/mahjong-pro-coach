@@ -7,46 +7,39 @@ import {
   Brain, HelpCircle, MessageSquare, ShieldCheck, GripVertical
 } from 'lucide-react';
 
-// --- VERIFIED STANDARD HAND LIBRARY (35 Viable Hands) ---
+// --- DATA: 35 VERIFIED STANDARD HANDS ---
 const STANDARD_TEMPLATES = [
-  // YEAR SECTION
-  { id: 1, section: "Year", name: "Big Year Kongs", type: "X", desc: "2 Flowers, Kongs of 2s, Soaps (0s), and 6s", code: "FF222200006666", parts: [{t:"FF", c:"text-pink-500"}, {t:"2222", c:"text-blue-600"}, {t:"0000", c:"text-slate-400"}, {t:"6666", c:"text-green-600"}] },
-  { id: 2, section: "Year", name: "Yearly Winds", type: "X", desc: "Kongs of North/South, Year in 2 suits", code: "NNNNSSSS20262026", parts: [{t:"NNNN SSSS", c:"text-slate-500"}, {t:"2026", c:"text-blue-600"}, {t:"2026", c:"text-green-600"}] },
+  { id: 1, section: "Year", name: "Year Kongs", type: "X", desc: "2 Flowers, Kongs of 2s, Soaps, and 6s", code: "FF222200006666", parts: [{t:"FF", c:"text-pink-500"}, {t:"2222", c:"text-blue-600"}, {t:"0000", c:"text-slate-400"}, {t:"6666", c:"text-green-600"}] },
+  { id: 2, section: "Year", name: "Yearly Winds", type: "X", desc: "Kongs of N/S, Year in 2 suits", code: "NNNNSSSS20262026", parts: [{t:"NNNN SSSS", c:"text-slate-500"}, {t:"2026", c:"text-blue-600"}, {t:"2026", c:"text-green-600"}] },
   { id: 3, section: "Year", name: "Full Year Run", type: "X", desc: "4 Flowers, Year sequences in all suits", code: "FFFF202620262026", parts: [{t:"FFFF", c:"text-pink-500"}, {t:"2026", c:"text-blue-600"}, {t:"2026", c:"text-green-600"}, {t:"2026", c:"text-red-600"}] },
   { id: 4, section: "Year", name: "Yearly Pairs", type: "C", desc: "Pairs of 2, 0, 6 in 3 suits. No Jokers.", code: "22002266220022", parts: [{t:"22", c:"text-blue-600"}, {t:"00", c:"text-slate-400"}, {t:"22", c:"text-green-600"}, {t:"66", c:"text-red-600"}] },
   { id: 5, section: "Year", name: "Dragon Year Mix", type: "X", desc: "Year in 2 suits, Kong of Dragons", code: "20262026DDDDFF", parts: [{t:"2026", c:"text-blue-600"}, {t:"2026", c:"text-green-600"}, {t:"DDDD", c:"text-slate-500"}, {t:"FF", c:"text-pink-500"}] },
-  // EVEN SECTION
   { id: 6, section: "Even", name: "Standard Evens", type: "X", desc: "Pungs of 2/8, Kongs of 4/6 in 2 suits", code: "22288844446666", parts: [{t:"222 888", c:"text-blue-600"}, {t:"4444 6666", c:"text-green-600"}] },
   { id: 7, section: "Even", name: "Even Dragon Kongs", type: "X", desc: "Kongs of 2/4, Kong Dragons, Pairs 6/8", code: "22224444DDDD6688", parts: [{t:"2222 4444", c:"text-blue-600"}, {t:"DDDD", c:"text-slate-500"}, {t:"66 88", c:"text-blue-600"}] },
   { id: 8, section: "Even", name: "Even Flower Pungs", type: "X", desc: "4 Flowers, Pungs 2, 4, 6, 8", code: "FFFF222444666888", parts: [{t:"FFFF", c:"text-pink-500"}, {t:"222 444 666 888", c:"text-blue-600"}] },
   { id: 9, section: "Even", name: "Mixed Even Set", type: "X", desc: "Kongs 2, 4, 6, 8 in 3 mixed suits", code: "2222444466668888", parts: [{t:"2222", c:"text-blue-600"}, {t:"4444", c:"text-green-600"}, {t:"6666", c:"text-red-600"}, {t:"8888", c:"text-blue-600"}] },
   { id: 10, section: "Even", name: "Even Pair Sequence", type: "C", desc: "Even pairs in 2 suits. No Jokers.", code: "22446688224466", parts: [{t:"22 44 66 88", c:"text-blue-600"}, {t:"22 44 66", c:"text-green-600"}] },
-  // ODD SECTION
   { id: 11, section: "Odd", name: "Monocolor Odds", type: "X", desc: "Pungs 1/3, Kong 5, Pairs 7/9", code: "11133355557799", parts: [{t:"111 333 5555 77 99", c:"text-blue-600"}] },
   { id: 12, section: "Odd", name: "Odd Dragon Kongs", type: "X", desc: "Kongs 1, 3, 5 and Dragons", code: "11113333DDDD5555", parts: [{t:"1111 3333", c:"text-blue-600"}, {t:"DDDD", c:"text-slate-500"}, {t:"5555", c:"text-blue-600"}] },
   { id: 13, section: "Odd", name: "Windy Odds", type: "X", desc: "Kongs E/W, 13579 sequence", code: "EEEEWWWW13579", parts: [{t:"EEEE WWWW", c:"text-slate-500"}, {t:"13579", c:"text-blue-600"}] },
   { id: 14, section: "Odd", name: "High Odds Mix", type: "X", desc: "Pungs of 1, 3, 5, 7, 9 mixed", code: "111333555777999", parts: [{t:"111 333 555 777 999", c:"text-blue-600"}] },
   { id: 15, section: "Odd", name: "Flower Odds", type: "X", desc: "Flowers and 13579 in 2 suits", code: "FFFF1357913579", parts: [{t:"FFFF", c:"text-pink-500"}, {t:"13579", c:"text-blue-600"}, {t:"13579", c:"text-green-600"}] },
-  // RUN SECTION
   { id: 16, section: "Run", name: "Small Consecutive", type: "X", desc: "Pung/Kong/Pung/Kong 4 consecutive", code: "11122223334444", parts: [{t:"111 2222", c:"text-blue-600"}, {t:"333 4444", c:"text-green-600"}] },
-  { id: 17, section: "Run", name: "Big Flowery Run", type: "X", desc: "4 Flowers, 4 Consecutive Pungs", code: "FFFF111222333444", parts: [{t:"FFFF", c:"text-pink-500"}, {t:"111 222 333 444", c:"text-blue-600"}] },
+  { id: 17, section: "Run", name: "Big Flowery Run", type: "X", desc: "4 Flowers, 4 Consecutive Pungs", code: "FFFF444555666777", parts: [{t:"FFFF", c:"text-pink-500"}, {t:"444 555 666 777", c:"text-blue-600"}] },
   { id: 18, section: "Run", name: "Four Kong Run", type: "X", desc: "4 Consecutive Kongs in 2 suits", code: "1111222233334444", parts: [{t:"1111 2222", c:"text-blue-600"}, {t:"3333 4444", c:"text-green-600"}] },
   { id: 19, section: "Run", name: "Consecutive Pairs", type: "C", desc: "7 Consecutive Pairs. No Jokers.", code: "11223344556677", parts: [{t:"11 22 33 44 55 66 77", c:"text-blue-600"}] },
   { id: 20, section: "Run", name: "Tricolor Run", type: "C", desc: "1-2-3 in 3 colors plus Flowers", code: "123123123FF", parts: [{t:"123", c:"text-blue-600"}, {t:"123", c:"text-green-600"}, {t:"123", c:"text-red-600"}, {t:"FF", c:"text-pink-500"}] },
   { id: 21, section: "Run", name: "Dragon Run Set", type: "X", desc: "3 Pungs Run, Kong Dragons", code: "111222333DDDD", parts: [{t:"111 222 333", c:"text-blue-600"}, {t:"DDDD", c:"text-slate-500"}] },
   { id: 22, section: "Run", name: "Five Pung Run", type: "X", desc: "5 Consecutive Pungs mixed suits", code: "111222333444555", parts: [{t:"111 222", c:"text-blue-600"}, {t:"333", c:"text-green-600"}, {t:"444 555", c:"text-red-600"}] },
-  // WINDS & DRAGONS
   { id: 23, section: "Winds", name: "The Big Four", type: "X", desc: "Kongs of all four winds", code: "NNNNSSSSEEEEWWWW", parts: [{t:"NNNN SSSS EEEE WWWW", c:"text-slate-500"}] },
   { id: 24, section: "Winds", name: "Dragon Breath", type: "X", desc: "Kongs of Green, Red, White Dragons", code: "DDDDDDDDDDDDFF", parts: [{t:"DDDD DDDD DDDD", c:"text-slate-500"}, {t:"FF", c:"text-pink-500"}] },
   { id: 25, section: "Winds", name: "Global Traveler", type: "X", desc: "Single N-E-W-S and 3 Kongs", code: "NEWS111122223333", parts: [{t:"NEWS", c:"text-slate-500"}, {t:"1111 2222 3333", c:"text-blue-600"}] },
   { id: 26, section: "Winds", name: "Dragon Pair Set", type: "C", desc: "Pairs of all Dragons and Flowers", code: "DDDDDDFFFF", parts: [{t:"DD DD DD", c:"text-slate-500"}, {t:"FF FF", c:"text-pink-500"}] },
   { id: 27, section: "Winds", name: "Wind Pung Mix", type: "X", desc: "Pungs of Winds and a Run", code: "NNNSSSEEE123", parts: [{t:"NNN SSS EEE", c:"text-slate-500"}, {t:"123", c:"text-blue-600"}] },
   { id: 28, section: "Winds", name: "Dragon Run X", type: "X", desc: "Kong Dragons, Pungs of Numbers", code: "DDDD111222333", parts: [{t:"DDDD", c:"text-slate-500"}, {t:"111 222 333", c:"text-blue-600"}] },
-  // QUINTS
   { id: 29, section: "Quints", name: "Quint Run", type: "X", desc: "Quint of 1s and 2s, Flowers", code: "1111122222FFFF", parts: [{t:"11111 22222", c:"text-blue-600"}, {t:"FFFF", c:"text-pink-500"}] },
   { id: 30, section: "Quints", name: "Quint Dragons", type: "X", desc: "Quint of Dragons, Kong numbers", code: "DDDDD11112222", parts: [{t:"DDDDD", c:"text-slate-500"}, {t:"1111 2222", c:"text-blue-600"}] },
   { id: 31, section: "Quints", name: "Triple Quint Run", type: "X", desc: "Three Quints consecutive numbers", code: "111112222233333", parts: [{t:"11111", c:"text-blue-600"}, {t:"22222", c:"text-green-600"}, {t:"33333", c:"text-red-600"}] },
-  // SINGLES & PAIRS
   { id: 32, section: "Pairs", name: "Big Odds Pair", type: "C", desc: "Pairs of all odds, Flowers, Dragons", code: "FF1133557799DD", parts: [{t:"FF", c:"text-pink-500"}, {t:"11 33 55 77 99", c:"text-blue-600"}, {t:"DD", c:"text-slate-400"}] },
   { id: 33, section: "Pairs", name: "Street Run Pairs", type: "C", desc: "Full 1-9 suit sequence. No Jokers.", code: "123456789FF", parts: [{t:"1 2 3 4 5 6 7 8 9", c:"text-blue-600"}, {t:"FF", c:"text-pink-500"}] },
   { id: 34, section: "Pairs", name: "Windy Pair Set", type: "C", desc: "Pairs of all Winds and 3 numbers", code: "NNSS EEWW112233", parts: [{t:"NN SS EE WW", c:"text-slate-500"}, {t:"11 22 33", c:"text-blue-600"}] },
@@ -110,7 +103,6 @@ const HandCode = ({ parts }) => (
   </div>
 );
 
-// --- MAIN APP ---
 export default function App() {
   const [gameState, setGameState] = useState('menu');
   const [deck, setDeck] = useState([]);
@@ -120,7 +112,7 @@ export default function App() {
   const [ghostStacks, setGhostStacks] = useState({ left: [], across: [], right: [] });
   const [charlestonStep, setCharlestonStep] = useState(0); 
   const [discards, setDiscards] = useState([]);
-  const [message, setMessage] = useState("V10.1 Pro Trainer");
+  const [message, setMessage] = useState("V10.1 Stable");
   const [drawnTile, setDrawnTile] = useState(null);
   const [showCard, setShowCard] = useState(false);
   const [pinnedHandIds, setPinnedHandIds] = useState([]);
@@ -155,7 +147,7 @@ export default function App() {
     return () => { if(timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  // Analysis Effect (Traffic Light Logic)
+  // Analysis Effect
   useEffect(() => {
     if (gameState === 'charleston' && showCoach && hand.length === 13) {
       const selected = selectedIndices.map(i => hand[i]).filter(Boolean);
@@ -168,9 +160,9 @@ export default function App() {
       const uniqueSuits = new Set(selected.map(t => t.suit).filter(Boolean)).size;
 
       let fb = { msg: "Monitoring choices...", color: "blue" };
-      if (brokePairCount > 0) fb = { msg: `PAIR BREAKER: you are selecting ${brokePairCount} tile(s) from pairs. try to keep sets together!`, color: "red" };
-      else if (flowerCount > 0) fb = { msg: `FLOWER LEAK: passing ${flowerCount} Flower(s). risky unless you're committed.`, color: "yellow" };
-      else if (selected.length === 3 && uniqueSuits === 1) fb = { msg: `SUIT DENSITY: passing 3 tiles of one suit helps neighbor build clusters.`, color: "yellow" };
+      if (brokePairCount > 0) fb = { msg: `PAIR BREAKER: you are selecting ${brokePairCount} tile(s) from pairs. risky move!`, color: "red" };
+      else if (flowerCount > 0) fb = { msg: `FLOWER LEAK: passing ${flowerCount} Flower(s). safer to keep early on.`, color: "yellow" };
+      else if (selected.length === 3 && uniqueSuits === 1) fb = { msg: `SUIT DENSITY: passing 3 of one suit helps neighbors too much!`, color: "yellow" };
       else if (selected.length === 3) fb = { msg: `CLEAN PASS: strategic outliers selected for shedding.`, color: "green" };
       setRealTimeFeedback(fb);
     }
@@ -185,7 +177,6 @@ export default function App() {
     for(let i=0; i<6; i++) { stacks.left.push(naturals.splice(0,3)); stacks.across.push(naturals.splice(0,3)); stacks.right.push(naturals.splice(0,3)); }
     const wall = [...naturals, ...shuffled.filter(t => t.type === 'joker')].sort(() => Math.random() - 0.5);
     
-    // Tiered Reset to prevent race conditions
     setSelectedIndices([]); setDiscards([]); setDrawnTile(null);
     setPendingDiscardIdx(null); setClaimableTile(null); setBestMatch(null); 
     setCharlestonStep(0); setAiSuggestionReason(""); setExposures([]);
@@ -197,7 +188,6 @@ export default function App() {
 
   const handleTileAction = (i) => {
     const now = Date.now();
-    // 1. Double-Tap Reorder Mode
     if (movingIndex !== null) {
       if (movingIndex === i) { setMovingIndex(null); }
       else {
@@ -208,14 +198,10 @@ export default function App() {
       }
       return;
     }
-
     if (now - lastClickTime < 350 && lastClickIndex === i) {
       setMovingIndex(i); setLastClickTime(0); return;
     }
-
     setLastClickTime(now); setLastClickIndex(i);
-
-    // 2. Selection Logic
     if (gameState === 'charleston') {
       if (hand[i].type === 'joker') return;
       setSelectedIndices(prev => prev.includes(i) ? prev.filter(x => x !== i) : (prev.length < 3 ? [...prev, i] : prev));
@@ -316,7 +302,7 @@ export default function App() {
             <Brain className="w-8 h-8 text-orange-500" />
             <div>
               <h1 className="text-xl font-black text-yellow-400 uppercase leading-none tracking-tight">Pro Coach V10.1</h1>
-              <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-1 italic tracking-tighter">Hand Persistence Update</p>
+              <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-1 italic tracking-tighter">Strategic Trainer</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -345,7 +331,7 @@ export default function App() {
             <div className="text-center py-16 animate-in fade-in zoom-in space-y-8">
               <Zap className="w-14 h-14 text-orange-500 mx-auto" />
               <div className="space-y-2">
-                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Physical Logic.</h2>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Intelligent Mastery.</h2>
                 <p className="max-w-sm mx-auto text-slate-500 text-sm font-medium italic">Integrated coaching feedback, custom hand lab, and rack organization tools.</p>
               </div>
               <div className="flex flex-col md:flex-row gap-4 justify-center">
@@ -359,7 +345,7 @@ export default function App() {
             <div className="space-y-4 animate-in slide-in-from-right-4">
               <div className="flex justify-between items-center px-2">
                 <h3 className="text-xl font-black uppercase text-slate-700 flex items-center gap-2"><Brain className="w-5 h-5 text-blue-600" /> Designer Lab</h3>
-                <button onClick={() => setGameState('menu')} className="text-slate-400 hover:text-red-500"><X /></button>
+                <button onClick={() => setGameState('menu')} className="text-slate-400 hover:text-red-500 transition-colors"><X /></button>
               </div>
               {creatorError && <div className="bg-red-50 border-2 border-red-200 p-4 rounded-2xl flex items-center gap-3 text-red-600 animate-in shake"><AlertTriangle className="w-5 h-5" /><p className="text-xs font-bold uppercase">{creatorError}</p></div>}
               <div className="bg-slate-50 p-5 rounded-[2rem] border-2 border-slate-200 space-y-4 shadow-inner">
@@ -390,7 +376,6 @@ export default function App() {
 
           {(gameState === 'charleston' || gameState === 'playing' || gameState === 'finished') && (
             <div className="space-y-4 animate-in fade-in">
-              {/* PINNED */}
               <div className="flex justify-center gap-2 min-h-[60px]">
                 {pinnedHandIds.map(id => {
                   const h = fullLibrary.find(x => x.id === id);
@@ -408,7 +393,7 @@ export default function App() {
                 <div className="md:col-span-9 bg-blue-50 p-4 rounded-2xl border border-blue-100 flex items-center gap-3 shadow-sm">
                   <div className={`p-2 rounded-xl ${gameState === 'charleston' ? 'bg-orange-600' : 'bg-green-600'} text-white shadow-md`}><User className="w-5 h-5" /></div>
                   <div className="overflow-hidden">
-                    <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">{gameState === 'charleston' ? `Step: ${steps[charlestonStep]}` : 'Active Play'}</p>
+                    <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">{gameState === 'charleston' ? `Pass: ${steps[charlestonStep]}` : 'Active Session'}</p>
                     <p className="font-black text-slate-800 text-xs truncate uppercase tracking-tighter">{message}</p>
                   </div>
                 </div>
@@ -426,7 +411,7 @@ export default function App() {
                      {realTimeFeedback?.color === 'red' ? <AlertTriangle className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                    </div>
                    <div className="pr-4">
-                     <p className="text-[8px] font-black uppercase opacity-60 leading-none mb-1">Coach Logic</p>
+                     <p className="text-[8px] font-black uppercase opacity-60 leading-none mb-1">Coach Reasoning</p>
                      <p className="text-xs font-bold leading-tight italic">{aiSuggestionReason || realTimeFeedback?.msg}</p>
                    </div>
                 </div>
@@ -480,7 +465,7 @@ export default function App() {
                       </div>
                     </div>
                   ) : (
-                    <div className="opacity-10 flex flex-col items-center gap-2"><div className="w-16 h-24 border-2 border-dashed border-slate-400 rounded-2xl shadow-inner"></div><p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Discard Zone</p></div>
+                    <div className="opacity-10 flex flex-col items-center gap-2"><div className="w-16 h-24 border-2 border-dashed border-slate-400 rounded-2xl shadow-inner"></div><p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Discard Field</p></div>
                   )}
                 </div>
 
@@ -515,7 +500,7 @@ export default function App() {
                     </div>
                   ) : pendingDiscardIdx !== null ? (
                     <div className="flex gap-2 animate-in slide-in-from-bottom-2">
-                       <button onClick={() => setPendingDiscardIdx(null)} className="px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold text-xs hover:bg-slate-50">Cancel</button>
+                       <button onClick={() => setPendingDiscardIdx(null)} className="px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold text-xs hover:bg-slate-50 transition-colors">Cancel</button>
                        <button onClick={confirmDiscard} className="px-10 py-3 bg-red-600 text-white rounded-xl font-black flex items-center gap-2 shadow-lg text-xs hover:bg-red-700 transition-all uppercase tracking-widest">Discard</button>
                     </div>
                   ) : gameState === 'playing' && (
