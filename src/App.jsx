@@ -5,7 +5,7 @@ import {
   Cpu, AlertCircle, ShieldAlert, ThumbsUp, TrendingUp, X, 
   Sparkles, Search, Target, Lightbulb, CheckCircle2, Zap, Pin, PinOff,
   Hand, Timer, Trash2, PlusCircle, Save, Trash, AlertTriangle, Info,
-  Brain, HelpCircle, MessageSquare, ShieldCheck, GripVertical, SortAsc, ArrowUpDown
+  Brain, HelpCircle, MessageSquare, ShieldCheck, GripVertical, SortAsc, ArrowUpDown, Ghost
 } from 'lucide-react';
 
 // --- DATA: 35 VERIFIED STANDARD HANDS ---
@@ -62,7 +62,7 @@ const createDeck = () => {
   return d.sort(() => Math.random() - 0.5);
 };
 
-const Tile = ({ tile, onClick, isSelected, size = "md", disabled = false, isSuggested = false, isClaimable = false, isExposed = false, isMoving = false }) => {
+const Tile = ({ tile, onClick, isSelected, size = "md", disabled = false, isSuggested = false, isClaimable = false, isExposed = false, isMoving = false, countOverlay }) => {
   if (!tile) return null;
   const getStyle = () => {
     if (disabled) return 'bg-gray-100 border-gray-200 text-gray-400 opacity-40 grayscale cursor-not-allowed';
@@ -86,6 +86,9 @@ const Tile = ({ tile, onClick, isSelected, size = "md", disabled = false, isSugg
     <div onClick={disabled ? null : onClick} className={`${sizes[size]} flex-shrink-0 relative cursor-pointer flex flex-col items-center justify-center border-2 rounded-xl shadow-sm m-0.5 transition-all transform ${!disabled && !isExposed && !isMoving && 'hover:-translate-y-1 active:scale-95'} ${getStyle()} ${isSelected ? 'ring-4 ring-yellow-400 -translate-y-2' : ''} ${isSuggested ? 'ring-2 ring-red-500 border-red-600' : ''} ${isClaimable ? 'animate-bounce ring-4 ring-orange-500 shadow-xl z-20' : ''}`}>
       <span className="font-bold leading-none select-none">{valDisplay}</span>
       {tile.suit && <span className="text-[10px] uppercase opacity-60 font-black mt-1 select-none">{tile.suit[0]}</span>}
+      {countOverlay !== undefined && countOverlay > 0 && (
+        <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm">{countOverlay}</div>
+      )}
     </div>
   );
 };
@@ -105,9 +108,10 @@ function App() {
   const [ghostStacks, setGhostStacks] = useState({ left: [], across: [], right: [] });
   const [charlestonStep, setCharlestonStep] = useState(0); 
   const [discards, setDiscards] = useState([]);
-  const [message, setMessage] = useState("V11.2 Pro Trainer");
+  const [message, setMessage] = useState("V11.4 Strategic Session");
   const [drawnTile, setDrawnTile] = useState(null);
   const [showCard, setShowCard] = useState(false);
+  const [showDeadTiles, setShowDeadTiles] = useState(false);
   const [pinnedHandIds, setPinnedHandIds] = useState([]);
   const [suggestedIndices, setSuggestedIndices] = useState([]);
   const [aiSuggestionReason, setAiSuggestionReason] = useState("");
@@ -135,6 +139,18 @@ function App() {
   const timerRef = useRef(null);
   const steps = ["Right", "Over (Across)", "Left", "Left", "Over (Across)", "Right"];
   const fullLibrary = useMemo(() => [...sessionCustomHands, ...STANDARD_TEMPLATES], [sessionCustomHands]);
+
+  // Derived "Dead" Tile calculation
+  const deadTileCounts = useMemo(() => {
+    const counts = {};
+    discards.forEach(t => {
+      const v = (t.val === 0 || t.val === 'White') ? '0' : t.val.toString();
+      const s = t.suit || t.type;
+      const key = `${v}-${s}`;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return counts;
+  }, [discards]);
 
   useEffect(() => {
     return () => { if(timerRef.current) clearInterval(timerRef.current); };
@@ -222,7 +238,7 @@ function App() {
       setAiSuggestionReason("");
     } else if (gameState === 'playing') {
       if (isClaimingMode) setSelectedIndices(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
-      else if (!claimableTile) setPendingDiscardIdx(i);
+      else { if (!claimableTile) setPendingDiscardIdx(i); }
     }
   };
 
@@ -305,15 +321,54 @@ function App() {
 
   const togglePin = (id) => setPinnedHandIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p].slice(-1).concat(id));
 
+  // Components for the Dead Tiles Screen
+  const DeadTileGrid = () => {
+    const categories = [
+      { name: "Dots", items: [1,2,3,4,5,6,7,8,9].map(n => ({ val: n, suit: 'dots' })) },
+      { name: "Bams", items: [1,2,3,4,5,6,7,8,9].map(n => ({ val: n, suit: 'bams' })) },
+      { name: "Cracks", items: [1,2,3,4,5,6,7,8,9].map(n => ({ val: n, suit: 'cracks' })) },
+      { name: "Winds", items: ['N','S','E','W'].map(w => ({ val: w, type: 'wind' })) },
+      { name: "Dragons", items: ['Green','Red','White'].map(d => ({ val: d, type: 'dragon' })) },
+      { name: "Special", items: [{ val: 'F', type: 'flower' }, { val: 'J', type: 'joker' }] }
+    ];
+
+    return (
+      <div className="space-y-6">
+        {categories.map(cat => (
+          <div key={cat.name}>
+            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b pb-1">{cat.name}</h4>
+            <div className="flex flex-wrap gap-1">
+              {cat.items.map((tileDef, i) => {
+                const valStr = (tileDef.val === 0 || tileDef.val === 'White') ? '0' : tileDef.val.toString();
+                const key = `${valStr}-${tileDef.suit || tileDef.type}`;
+                const count = deadTileCounts[key] || 0;
+                return (
+                  <div key={i} className={`relative group ${count === 0 ? 'opacity-20 grayscale' : 'opacity-100'}`}>
+                    <Tile tile={tileDef} size="sm" countOverlay={count} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-100 font-sans text-slate-800 overflow-hidden">
       <div className="flex-none bg-slate-900 text-white p-3 flex justify-between items-center border-b-4 border-orange-500 shadow-xl">
         <div className="flex items-center gap-2">
           <Brain className="w-6 h-6 text-orange-500" />
-          <h1 className="text-lg font-black text-yellow-400 leading-none tracking-tighter uppercase">Pro Coach V11.2</h1>
+          <h1 className="text-lg font-black text-yellow-400 leading-none tracking-tighter uppercase">Pro Coach V11.4</h1>
         </div>
         <div className="flex gap-2">
-          {gameState !== 'menu' && <button onClick={() => setShowCard(true)} className="bg-blue-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg"><BookOpen className="w-3.5 h-3.5 inline mr-1" /> Card</button>}
+          {gameState !== 'menu' && (
+            <>
+              <button onClick={() => setShowDeadTiles(true)} className="bg-red-900/40 hover:bg-red-900 text-red-100 px-3 py-1 rounded-lg text-[9px] font-black uppercase flex items-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Dead</button>
+              <button onClick={() => setShowCard(true)} className="bg-blue-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Card</button>
+            </>
+          )}
           <button onClick={() => setGameState('menu')} className="p-1.5 bg-slate-800 rounded-lg hover:bg-slate-700 transition-all"><RotateCcw className="w-4 h-4 text-slate-400" /></button>
         </div>
       </div>
@@ -323,7 +378,7 @@ function App() {
           <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in">
             <Zap className="w-12 h-12 text-orange-500 mb-4" />
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter mb-2 uppercase tracking-widest">Intelligent Mahjong.</h2>
-            <p className="max-w-xs text-slate-500 text-xs font-medium mb-8">Master standard hands and custom targets with session-persistent creation and auto-sorting.</p>
+            <p className="max-w-xs text-slate-500 text-xs font-medium mb-8 italic">Master standard hands, build custom targets, and track "Dead Tiles" with Version 11.4.</p>
             <div className="flex flex-col gap-3 w-full max-w-xs">
               <button onClick={initGame} className="py-4 bg-orange-600 text-white rounded-2xl font-black text-lg shadow-xl uppercase tracking-tighter transition-all hover:bg-orange-700 active:scale-95">Start Training</button>
               <button onClick={() => setGameState('creator')} className="py-4 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-xl uppercase tracking-tighter transition-all hover:bg-black active:scale-95">Hand Lab</button>
@@ -349,7 +404,7 @@ function App() {
               <div className="flex flex-wrap gap-1 justify-center min-h-[100px] border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50/50">
                 {creatorBuffer.map((t, i) => (
                   <div key={i} className={`w-8 h-12 border-2 rounded-lg flex items-center justify-center font-black text-sm relative group bg-white shadow-sm ${t.colorClass}`}>
-                    {t.valStr}
+                    {t.valStr === '0' ? 'Soap' : t.valStr}
                     <button onClick={() => setCreatorBuffer(p => p.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 shadow-sm transition-all hover:scale-110"><X className="w-2.5 h-2.5" /></button>
                   </div>
                 ))}
@@ -389,7 +444,7 @@ function App() {
             {gameState === 'charleston' && showCoach && realTimeFeedback && (
                 <div className={`flex-none p-2 rounded-xl border flex items-center gap-3 relative ${coachColorStyles[realTimeFeedback.color || 'blue']}`}>
                    <button onClick={() => setShowCoach(false)} className="absolute top-1 right-1 opacity-50"><X className="w-3 h-3" /></button>
-                   <div className={`p-1 rounded-full text-white ${realTimeFeedback.color === 'red' ? 'bg-red-500' : realTimeFeedback.color === 'yellow' ? 'bg-yellow-500' : realTimeFeedback.color === 'blue' ? 'bg-blue-500' : 'bg-green-500'}`}>
+                   <div className={`p-1 rounded-full text-white ${realTimeFeedback.color === 'red' ? 'bg-red-500' : realTimeFeedback.color === 'yellow' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
                      <ShieldCheck className="w-3 h-3" />
                    </div>
                    <p className="text-[10px] font-bold leading-tight italic uppercase tracking-tighter pr-4">{aiSuggestionReason || realTimeFeedback.msg}</p>
@@ -408,7 +463,7 @@ function App() {
 
             <div className="flex-1 bg-slate-50 border-2 border-slate-200 rounded-[2rem] p-3 flex flex-col justify-between shadow-inner">
                <div className="flex flex-wrap justify-center gap-2 mb-2 min-h-[30px] border-b border-slate-200 pb-2 overflow-y-auto">
-                  {exposures.length === 0 && <span className="text-[7px] font-black uppercase text-slate-300 mt-2">Rack exposures</span>}
+                  {exposures.length === 0 && <span className="text-[7px] font-black uppercase text-slate-300 mt-2 italic tracking-widest">Rack top (Exposures)</span>}
                   {exposures.map((set, i) => (
                     <div key={i} className="flex bg-white/70 p-1 rounded-lg border border-slate-200 shadow-sm animate-in zoom-in">{set.map(t => <Tile key={t.id} tile={t} size="sm" isExposed={true} />)}</div>
                   ))}
@@ -469,23 +524,24 @@ function App() {
                     </>
                   ) : pendingDiscardIdx !== null ? (
                     <div className="flex gap-2">
-                       <button onClick={() => setPendingDiscardIdx(null)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-[9px] transition-all hover:bg-slate-50">Cancel</button>
-                       <button onClick={confirmDiscard} className="px-6 py-2 bg-red-600 text-white rounded-xl font-black text-[9px] shadow-lg transition-all hover:bg-red-700">Discard</button>
+                       <button onClick={() => setPendingDiscardIdx(null)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-[9px] transition-all hover:bg-slate-50 uppercase tracking-tighter">Cancel</button>
+                       <button onClick={confirmDiscard} className="px-6 py-2 bg-red-600 text-white rounded-xl font-black text-[9px] shadow-lg transition-all hover:bg-red-700 uppercase tracking-tighter">Discard</button>
                     </div>
                   ) : gameState === 'playing' && (
-                    <button onClick={identifyBestHand} className="px-8 py-2 bg-slate-900 text-white rounded-xl font-black text-[9px] shadow-lg transition-all hover:bg-black"><Target className="w-3 h-3 inline mr-1 text-yellow-400" /> Hand Identify</button>
+                    <button onClick={identifyBestHand} className="px-8 py-2 bg-slate-900 text-white rounded-xl font-black text-[9px] shadow-lg transition-all hover:bg-black uppercase tracking-widest"><Target className="w-3 h-3 inline mr-1 text-yellow-400" /> Identify Path</button>
                   )}
                </div>
             </div>
 
-            <div className="flex-none bg-white p-2 rounded-xl border border-slate-200 shadow-sm opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all overflow-hidden h-14">
-              <h4 className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-widest flex items-center gap-1"><Search className="w-2.5 h-2.5 inline mr-1" /> Discard History</h4>
+            <div onClick={() => setShowDeadTiles(true)} className="flex-none bg-white p-2 rounded-xl border border-slate-200 shadow-sm opacity-40 hover:opacity-100 cursor-pointer transition-all overflow-hidden h-14">
+              <h4 className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-widest flex items-center gap-1"><Search className="w-2 h-2" /> Discard Summary (Tap for full Tracker)</h4>
               <div className="flex flex-wrap gap-1 content-start">{discards.map((t, i) => <div key={i} className="scale-[0.5] -m-1.5"><Tile tile={t} size="sm" /></div>)}</div>
             </div>
           </div>
         )}
       </div>
 
+      {/* OVERLAY: CARD */}
       {showCard && (
         <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl max-h-[85vh] rounded-[2rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in">
@@ -495,6 +551,25 @@ function App() {
                 <div><h4 className="text-blue-600 font-black text-[9px] uppercase tracking-widest mb-3 border-b pb-1 tracking-tighter uppercase">Session Custom</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{sessionCustomHands.map(h => (<div key={h.id} className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 relative shadow-sm"><button onClick={() => togglePin(h.id)} className={`absolute top-2 right-2 p-1 rounded-full shadow-sm transition-all ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3 h-3" /></button><div className="font-black text-slate-800 text-[10px] mb-1 uppercase tracking-tighter">{h.name}</div><div className="bg-white p-2 rounded-lg border border-slate-200 mb-1 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[8px] font-bold text-slate-400 uppercase leading-snug tracking-tighter">{h.desc}</div><button onClick={() => setSessionCustomHands(p => p.filter(x => x.id !== h.id))} className="mt-3 text-red-400 text-[8px] font-black uppercase flex items-center gap-1 hover:text-red-600 transition-all tracking-tighter uppercase"><Trash className="w-2.5 h-2.5" /> Remove</button></div>))}</div></div>
               )}
               <div><h4 className="text-slate-400 font-black text-[9px] uppercase tracking-widest mb-3 border-b pb-1 tracking-tighter uppercase">Standard Set</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{STANDARD_TEMPLATES.map(h => (<div key={h.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 relative shadow-sm hover:border-blue-300 transition-colors"><button onClick={() => togglePin(h.id)} className={`absolute top-2 right-2 p-1 rounded-full shadow-sm transition-all ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3.5 h-3.5" /></button><div className="font-black text-slate-800 text-[10px] mb-1 uppercase tracking-tighter tracking-tighter uppercase">{h.name}</div><div className="bg-white p-2 rounded-lg border border-slate-200 mb-1 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[8px] font-bold text-slate-400 uppercase leading-snug tracking-tighter tracking-tighter uppercase">{h.desc}</div></div>))}</div></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OVERLAY: DEAD TILES */}
+      {showDeadTiles && (
+        <div className="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl max-h-[85vh] rounded-[2rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in">
+            <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
+              <h3 className="font-black text-slate-800 uppercase tracking-widest text-xs tracking-tighter flex items-center gap-2"><Trash2 className="w-4 h-4 text-red-600" /> Dead Tile Tracker</h3>
+              <button onClick={() => setShowDeadTiles(false)} className="p-1 text-slate-400 transition-all hover:text-red-500"><X /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide pb-20">
+               <div className="bg-red-50 border border-red-100 p-3 rounded-xl mb-6 flex items-start gap-3">
+                  <Info className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-[10px] font-bold text-red-800 uppercase tracking-tight">This screen tracks all tiles that have been discarded and not called. Tiles with counts are officially "dead" for the remainder of the session.</p>
+               </div>
+               <DeadTileGrid />
             </div>
           </div>
         </div>
@@ -513,7 +588,7 @@ function App() {
   );
 }
 
-// MOUNTING BRIDGE: Wrapped in a check to ensure it only runs once and only in the right environment
+// MOUNTING BRIDGE
 const rootElement = document.getElementById('root');
 if (rootElement && !rootElement._reactRootContainer) {
   const root = ReactDOM.createRoot(rootElement);
