@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import ReactDOM from 'react-dom/client';
 import { 
   Trophy, RotateCcw, ArrowRight, Layers, Play, BookOpen, User, 
   Cpu, AlertCircle, ShieldAlert, ThumbsUp, TrendingUp, X, 
@@ -48,6 +49,8 @@ const STANDARD_TEMPLATES = [
 
 const COLORS = [{ name: 'Blue', class: 'text-blue-600' }, { name: 'Green', class: 'text-green-600' }, { name: 'Red', class: 'text-red-600' }, { name: 'Gray', class: 'text-slate-400' }, { name: 'Pink', class: 'text-pink-500' }];
 
+const coachColorStyles = { red: "bg-red-50 border-red-200 text-red-700", yellow: "bg-yellow-50 border-yellow-200 text-yellow-700", blue: "bg-blue-50 border-blue-200 text-blue-700", green: "bg-green-50 border-green-200 text-green-700" };
+
 // --- UTILS ---
 const createDeck = () => {
   const d = [];
@@ -93,7 +96,7 @@ const HandCode = ({ parts }) => (
   </div>
 );
 
-export default function App() {
+function App() {
   const [gameState, setGameState] = useState('menu');
   const [deck, setDeck] = useState([]);
   const [hand, setHand] = useState([]);
@@ -102,7 +105,7 @@ export default function App() {
   const [ghostStacks, setGhostStacks] = useState({ left: [], across: [], right: [] });
   const [charlestonStep, setCharlestonStep] = useState(0); 
   const [discards, setDiscards] = useState([]);
-  const [message, setMessage] = useState("Pro Trainer V11.2");
+  const [message, setMessage] = useState("V11.2 Pro Trainer");
   const [drawnTile, setDrawnTile] = useState(null);
   const [showCard, setShowCard] = useState(false);
   const [pinnedHandIds, setPinnedHandIds] = useState([]);
@@ -154,7 +157,7 @@ export default function App() {
       let fb = { msg: "Monitoring choices...", color: "blue" };
       if (brokePairCount > 0) fb = { msg: `PAIR BREAKER: you are selecting ${brokePairCount} tile(s) from pairs. try to keep sets together!`, color: "red" };
       else if (flowerCount > 0) fb = { msg: `FLOWER LEAK: passing ${flowerCount} Flower(s). risky move early on.`, color: "yellow" };
-      else if (selected.length === 3 && uniqueSuits === 1) fb = { msg: `SUIT DENSITY: passing 3 tiles of one suit helps neighbor build clusters.`, color: "yellow" };
+      else if (selected.length === 3 && uniqueSuits === 1) fb = { msg: `SUIT DENSITY: passing 3 tiles of one suit helps neighbors too much!`, color: "yellow" };
       else if (selected.length === 3) fb = { msg: `CLEAN PASS: strategic outliers selected for shedding.`, color: "green" };
       setRealTimeFeedback(fb);
     }
@@ -301,7 +304,6 @@ export default function App() {
   };
 
   const togglePin = (id) => setPinnedHandIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p].slice(-1).concat(id));
-  const coachColorStyles = { red: "bg-red-50 border-red-200 text-red-700", yellow: "bg-yellow-50 border-yellow-200 text-yellow-700", blue: "bg-blue-50 border-blue-200 text-blue-700", green: "bg-green-50 border-green-200 text-green-700" };
 
   return (
     <div className="flex flex-col h-screen bg-slate-100 font-sans text-slate-800 overflow-hidden">
@@ -387,7 +389,7 @@ export default function App() {
             {gameState === 'charleston' && showCoach && realTimeFeedback && (
                 <div className={`flex-none p-2 rounded-xl border flex items-center gap-3 relative ${coachColorStyles[realTimeFeedback.color || 'blue']}`}>
                    <button onClick={() => setShowCoach(false)} className="absolute top-1 right-1 opacity-50"><X className="w-3 h-3" /></button>
-                   <div className={`p-1 rounded-full text-white ${realTimeFeedback.color === 'red' ? 'bg-red-500' : realTimeFeedback.color === 'yellow' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
+                   <div className={`p-1 rounded-full text-white ${realTimeFeedback.color === 'red' ? 'bg-red-500' : realTimeFeedback.color === 'yellow' ? 'bg-yellow-500' : realTimeFeedback.color === 'blue' ? 'bg-blue-500' : 'bg-green-500'}`}>
                      <ShieldCheck className="w-3 h-3" />
                    </div>
                    <p className="text-[10px] font-bold leading-tight italic uppercase tracking-tighter pr-4">{aiSuggestionReason || realTimeFeedback.msg}</p>
@@ -510,3 +512,12 @@ export default function App() {
     </div>
   );
 }
+
+// MOUNTING BRIDGE: Wrapped in a check to ensure it only runs once and only in the right environment
+const rootElement = document.getElementById('root');
+if (rootElement && !rootElement._reactRootContainer) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(<App />);
+}
+
+export default App;
