@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import ReactDOM from 'react-dom/client';
 import { 
   Trophy, RotateCcw, ArrowRight, Layers, Play, BookOpen, User, 
   Cpu, AlertCircle, ShieldAlert, ThumbsUp, TrendingUp, X, 
@@ -94,7 +93,7 @@ const HandCode = ({ parts }) => (
   </div>
 );
 
-function App() {
+export default function App() {
   const [gameState, setGameState] = useState('menu');
   const [deck, setDeck] = useState([]);
   const [hand, setHand] = useState([]);
@@ -103,10 +102,11 @@ function App() {
   const [ghostStacks, setGhostStacks] = useState({ left: [], across: [], right: [] });
   const [charlestonStep, setCharlestonStep] = useState(0); 
   const [discards, setDiscards] = useState([]);
-  const [message, setMessage] = useState("Pro Trainer V11.0");
+  const [message, setMessage] = useState("V11.1 Pro Trainer");
   const [drawnTile, setDrawnTile] = useState(null);
   const [showCard, setShowCard] = useState(false);
   const [pinnedHandIds, setPinnedHandIds] = useState([]);
+  const [suggestedIndices, setSuggestedIndices] = useState([]);
   const [aiSuggestionReason, setAiSuggestionReason] = useState("");
   const [realTimeFeedback, setRealTimeFeedback] = useState(null);
   const [showCoach, setShowCoach] = useState(true);
@@ -146,15 +146,15 @@ function App() {
       hand.forEach(t => { if (!t) return; const v = (t.val === 'White' || t.val === 0) ? '0' : t.val.toString(); const k = `${v}-${t.suit||''}`; counts[k] = (counts[k]||0)+1; });
       const brokePairCount = selected.filter(t => {
           const v = (t.val === 'White' || t.val === 0) ? '0' : t.val.toString();
-          return counts[`${v}-${t.suit||''}`] > 1;
+          return (counts[`${v}-${t.suit||''}`] || 0) > 1;
       }).length;
       const flowerCount = selected.filter(t => t.type === 'flower').length;
       const uniqueSuits = new Set(selected.map(t => t.suit).filter(Boolean)).size;
 
       let fb = { msg: "Monitoring choices...", color: "blue" };
-      if (brokePairCount > 0) fb = { msg: `PAIR BREAKER: you are selecting ${brokePairCount} tile(s) from pairs. try to keep sets!`, color: "red" };
+      if (brokePairCount > 0) fb = { msg: `PAIR BREAKER: you are selecting ${brokePairCount} tile(s) from pairs. try to keep sets together!`, color: "red" };
       else if (flowerCount > 0) fb = { msg: `FLOWER LEAK: passing ${flowerCount} Flower(s). risky move early on.`, color: "yellow" };
-      else if (selected.length === 3 && uniqueSuits === 1) fb = { msg: `SUIT DENSITY: passing 3 of one suit helps neighbors too much!`, color: "yellow" };
+      else if (selected.length === 3 && uniqueSuits === 1) fb = { msg: `SUIT DENSITY: passing 3 tiles of one suit helps neighbor build clusters.`, color: "yellow" };
       else if (selected.length === 3) fb = { msg: `CLEAN PASS: strategic outliers selected for shedding.`, color: "green" };
       setRealTimeFeedback(fb);
     }
@@ -172,7 +172,7 @@ function App() {
     setPendingDiscardIdx(null); setClaimableTile(null); setBestMatch(null); 
     setCharlestonStep(0); setAiSuggestionReason(""); setExposures([]);
     setGhostStacks(stacks); setDeck(wall);
-    setHand(dealtHand.sort((a,b) => (a.suit || a.type).localeCompare(b.suit || b.type)));
+    setHand(dealtHand.sort((a,b) => (a.suit || a.type || '').localeCompare(b.suit || b.type || '')));
     setGameState('charleston');
     setMessage(`Pass to the ${steps[0]}`);
   };
@@ -189,7 +189,7 @@ function App() {
         const valA = a.val === 'White' ? 0 : isNaN(a.val) ? 99 : parseInt(a.val);
         const valB = b.val === 'White' ? 0 : isNaN(b.val) ? 99 : parseInt(b.val);
         if (valA !== valB) return valA - valB;
-        return (a.suit || a.type).localeCompare(b.suit || b.type);
+        return (a.suit || a.type || '').localeCompare(b.suit || b.type || '');
       }
     });
     setHand(sorted);
@@ -308,10 +308,10 @@ function App() {
       <div className="flex-none bg-slate-900 text-white p-3 flex justify-between items-center border-b-4 border-orange-500 shadow-xl">
         <div className="flex items-center gap-2">
           <Brain className="w-6 h-6 text-orange-500" />
-          <h1 className="text-lg font-black text-yellow-400 leading-none tracking-tighter uppercase">Pro Coach V11.0</h1>
+          <h1 className="text-lg font-black text-yellow-400 leading-none tracking-tighter uppercase">Pro Coach V11.1</h1>
         </div>
         <div className="flex gap-2">
-          {gameState !== 'menu' && <button onClick={() => setShowCard(true)} className="bg-blue-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase"><BookOpen className="w-3.5 h-3.5 inline mr-1" /> Card</button>}
+          {gameState !== 'menu' && <button onClick={() => setShowCard(true)} className="bg-blue-600 px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg"><BookOpen className="w-3.5 h-3.5 inline mr-1" /> Card</button>}
           <button onClick={() => setGameState('menu')} className="p-1.5 bg-slate-800 rounded-lg hover:bg-slate-700"><RotateCcw className="w-4 h-4 text-slate-400" /></button>
         </div>
       </div>
@@ -320,7 +320,7 @@ function App() {
         {gameState === 'menu' ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in">
             <Zap className="w-12 h-12 text-orange-500 mb-4" />
-            <h2 className="text-2xl font-black text-slate-900 tracking-tighter mb-2 uppercase">Intelligent Mahjong.</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tighter mb-2 uppercase tracking-widest">Intelligent Mahjong.</h2>
             <p className="max-w-xs text-slate-500 text-xs font-medium mb-8">Master standard hands and custom targets with session-persistent creation and auto-sorting.</p>
             <div className="flex flex-col gap-3 w-full max-w-xs">
               <button onClick={initGame} className="py-4 bg-orange-600 text-white rounded-2xl font-black text-lg shadow-xl uppercase tracking-tighter">Start Training</button>
@@ -348,7 +348,7 @@ function App() {
                 {creatorBuffer.map((t, i) => (
                   <div key={i} className={`w-8 h-12 border-2 rounded-lg flex items-center justify-center font-black text-sm relative group bg-white shadow-sm ${t.colorClass}`}>
                     {t.valStr}
-                    <button onClick={() => setCreatorBuffer(p => p.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5"><X className="w-2.5 h-2.5" /></button>
+                    <button onClick={() => setCreatorBuffer(p => p.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 shadow-sm"><X className="w-2.5 h-2.5" /></button>
                   </div>
                 ))}
               </div>
@@ -357,7 +357,6 @@ function App() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col gap-2 overflow-hidden">
-            {/* PINNED AREA */}
             <div className="flex-none flex justify-center gap-2 min-h-[50px]">
               {pinnedHandIds.map(id => {
                 const h = fullLibrary.find(x => x.id === id);
@@ -371,26 +370,24 @@ function App() {
               })}
             </div>
 
-            {/* STATUS HUD */}
             <div className="flex-none flex gap-2">
               <div className="flex-1 bg-blue-50 p-3 rounded-2xl border border-blue-100 flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg ${gameState === 'charleston' ? 'bg-orange-600' : 'bg-green-600'} text-white`}><User className="w-4 h-4" /></div>
                 <div className="overflow-hidden">
                   <p className="text-[7px] font-black text-blue-500 uppercase tracking-widest leading-none mb-1">{gameState === 'charleston' ? `Pass: ${steps[charlestonStep]}` : 'Active Play'}</p>
-                  <p className="font-black text-slate-800 text-[10px] truncate uppercase">{message}</p>
+                  <p className="font-black text-slate-800 text-[10px] truncate uppercase tracking-tighter">{message}</p>
                 </div>
               </div>
-              <div className="flex-none bg-slate-900 text-white p-3 rounded-2xl flex items-center gap-2 border-b-4 border-slate-700">
+              <div className="flex-none bg-slate-900 text-white p-3 rounded-2xl flex items-center gap-2 border-b-4 border-slate-700 shadow-lg">
                 <TrendingUp className="w-3 h-3 text-yellow-400" />
                 <span className="text-xl font-black tabular-nums tracking-tighter">{deck.length}</span>
               </div>
             </div>
 
-            {/* COACH & BEST MATCH */}
             {gameState === 'charleston' && showCoach && realTimeFeedback && (
                 <div className={`flex-none p-2 rounded-xl border flex items-center gap-3 relative ${coachColorStyles[realTimeFeedback.color || 'blue']}`}>
                    <button onClick={() => setShowCoach(false)} className="absolute top-1 right-1 opacity-50"><X className="w-3 h-3" /></button>
-                   <div className={`p-1 rounded-full text-white ${realTimeFeedback.color === 'red' ? 'bg-red-500' : realTimeFeedback.color === 'yellow' ? 'bg-yellow-500' : 'bg-blue-500'}`}>
+                   <div className={`p-1 rounded-full text-white ${realTimeFeedback.color === 'red' ? 'bg-red-500' : realTimeFeedback.color === 'yellow' ? 'bg-yellow-500' : realTimeFeedback.color === 'blue' ? 'bg-blue-500' : 'bg-green-500'}`}>
                      <ShieldCheck className="w-3 h-3" />
                    </div>
                    <p className="text-[10px] font-bold leading-tight italic uppercase tracking-tighter pr-4">{aiSuggestionReason || realTimeFeedback.msg}</p>
@@ -407,23 +404,22 @@ function App() {
               </div>
             )}
 
-            {/* TABLE CENTER */}
             <div className="flex-1 bg-slate-50 border-2 border-slate-200 rounded-[2rem] p-3 flex flex-col justify-between shadow-inner">
-               <div className="flex flex-wrap justify-center gap-2 mb-2 min-h-[30px] border-b border-slate-200 pb-2">
-                  {exposures.length === 0 && <span className="text-[7px] font-black uppercase text-slate-300 mt-2">Rack exposures area</span>}
+               <div className="flex flex-wrap justify-center gap-2 mb-2 min-h-[30px] border-b border-slate-200 pb-2 overflow-y-auto">
+                  {exposures.length === 0 && <span className="text-[7px] font-black uppercase text-slate-300 mt-2">Rack exposures</span>}
                   {exposures.map((set, i) => (
-                    <div key={i} className="flex bg-white/70 p-1 rounded-lg border border-slate-200 shadow-sm animate-in zoom-in">{set.map(t => <Tile key={t.id} tile={t} size="sm" isExposed={true} />)}</div>
+                    <div key={i} className="flex bg-white/70 p-1 rounded-lg border border-slate-200 shadow-sm">{set.map(t => <Tile key={t.id} tile={t} size="sm" isExposed={true} />)}</div>
                   ))}
                </div>
 
                <div className="flex-1 flex items-center justify-center relative">
                   {claimableTile ? (
-                    <div className="bg-orange-50 border-2 border-orange-500 p-4 rounded-3xl flex flex-col items-center gap-2 animate-in zoom-in shadow-xl z-30">
-                      <div className="absolute -top-3 bg-orange-600 text-white px-3 py-0.5 rounded-full text-[8px] font-black flex items-center gap-1.5"><Timer className="w-2.5 h-2.5 animate-spin" /> {claimTimer}s</div>
+                    <div className="bg-orange-50 border-2 border-orange-500 p-4 rounded-3xl flex flex-col items-center gap-2 animate-in zoom-in shadow-2xl z-30">
+                      <div className="absolute -top-3 bg-orange-600 text-white px-3 py-0.5 rounded-full text-[8px] font-black flex items-center gap-1.5 shadow-md"><Timer className="w-2.5 h-2.5 animate-spin" /> {claimTimer}s</div>
                       <Tile tile={claimableTile} size="lg" isClaimable={true} />
                       <div className="flex gap-2">
                         {!isClaimingMode ? (
-                          <button onClick={() => { setIsClaimingMode(true); clearInterval(timerRef.current); }} className="bg-orange-600 text-white px-4 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest"><Hand className="w-3 h-3 inline mr-1" /> Call</button>
+                          <button onClick={() => { setIsClaimingMode(true); clearInterval(timerRef.current); }} className="bg-orange-600 text-white px-4 py-1.5 rounded-lg font-black text-[9px] uppercase shadow-md">Call</button>
                         ) : (
                           <button onClick={() => {
                             const sel = selectedIndices.map(i => hand[i]);
@@ -432,21 +428,20 @@ function App() {
                               setHand(hand.filter((_, i) => !selectedIndices.includes(i)));
                               setClaimableTile(null); setIsClaimingMode(false); setSelectedIndices([]);
                             }
-                          }} className="bg-green-600 text-white px-4 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest">Finish</button>
+                          }} className="bg-green-600 text-white px-4 py-1.5 rounded-lg font-black text-[9px] uppercase shadow-md">Finish</button>
                         )}
-                        <button onClick={() => { setClaimableTile(null); setIsClaimingMode(false); setSelectedIndices([]); }} className="p-1.5 bg-white border border-slate-200 rounded-lg"><X className="w-3 h-3" /></button>
+                        <button onClick={() => { setClaimableTile(null); setIsClaimingMode(false); setSelectedIndices([]); }} className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400"><X className="w-3 h-3" /></button>
                       </div>
                     </div>
                   ) : (
-                    <div className="opacity-10 flex flex-col items-center gap-1"><div className="w-12 h-16 border-2 border-dashed border-slate-400 rounded-xl shadow-inner"></div><p className="text-[7px] font-black uppercase text-slate-400 tracking-widest">Discard Center</p></div>
+                    <div className="opacity-10 flex flex-col items-center gap-1"><div className="w-12 h-16 border-2 border-dashed border-slate-400 rounded-xl shadow-inner"></div><p className="text-[7px] font-black uppercase text-slate-400">Discard Center</p></div>
                   )}
                </div>
 
-               {/* RACK (HAND) */}
-               <div className="flex-none">
+               <div className="flex-none mt-2">
                  <div className="flex justify-center gap-1 mb-2">
-                    <button onClick={() => sortHand('suit')} className="p-2 bg-white border border-slate-200 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 hover:bg-blue-50 transition-colors shadow-sm"><SortAsc className="w-3 h-3" /> Suit</button>
-                    <button onClick={() => sortHand('val')} className="p-2 bg-white border border-slate-200 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 hover:bg-blue-50 transition-colors shadow-sm"><ArrowUpDown className="w-3 h-3" /> Value</button>
+                    <button onClick={() => sortHand('suit')} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 shadow-sm"><SortAsc className="w-3 h-3" /> Suit</button>
+                    <button onClick={() => sortHand('val')} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[8px] font-black uppercase flex items-center gap-1 shadow-sm"><ArrowUpDown className="w-3 h-3" /> Value</button>
                  </div>
                  <div className="flex flex-wrap justify-center gap-0.5 border-t border-slate-200 pt-3">
                     {hand.map((tile, idx) => (
@@ -457,7 +452,7 @@ function App() {
                         {drawnTile ? (
                           <Tile tile={drawnTile} size="md" isSelected={pendingDiscardIdx === -1} onClick={() => setPendingDiscardIdx(-1)} />
                         ) : (
-                          <button onClick={() => { if(!claimableTile && deck.length > 0) { const dCopy = [...deck]; const p = dCopy.shift(); setDrawnTile(p); setDeck(dCopy); }}} disabled={deck.length === 0 || !!claimableTile} className="w-10 h-14 border-2 border-blue-300 border-dashed rounded-lg bg-blue-50 text-blue-300 flex items-center justify-center transition-all group shadow-sm"><Play className="w-4 h-4 group-hover:scale-110" /></button>
+                          <button onClick={() => { if(!claimableTile && deck.length > 0) { const dCopy = [...deck]; const p = dCopy.shift(); setDrawnTile(p); setDeck(dCopy); }}} disabled={deck.length === 0 || !!claimableTile} className="w-10 h-14 border-2 border-blue-300 border-dashed rounded-lg bg-blue-50 text-blue-300 flex items-center justify-center group shadow-sm transition-all"><Play className="w-4 h-4 group-hover:scale-110" /></button>
                         )}
                       </div>
                     )}
@@ -467,24 +462,23 @@ function App() {
                <div className="mt-3 flex justify-center gap-2">
                   {gameState === 'charleston' ? (
                     <>
-                      <button onClick={suggestPass} className="px-3 py-2 bg-white border-2 border-slate-200 rounded-xl font-black text-[8px] flex items-center gap-1.5 uppercase tracking-widest"><Brain className="w-3 h-3 text-orange-500" /> AI Help</button>
-                      <button onClick={processPass} disabled={selectedIndices.length !== 3} className={`px-6 py-2 rounded-xl font-black text-[9px] flex items-center gap-1.5 uppercase shadow-lg transition-all ${selectedIndices.length === 3 ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Confirm Pass <ArrowRight className="w-3 h-3" /></button>
+                      <button onClick={suggestPass} className="px-3 py-2 bg-white border-2 border-slate-200 rounded-xl font-black text-[8px] flex items-center gap-1.5 shadow-md"><Brain className="w-3 h-3 text-orange-500" /> AI Help</button>
+                      <button onClick={processPass} disabled={selectedIndices.length !== 3} className={`px-6 py-2 rounded-xl font-black text-[9px] flex items-center gap-1.5 uppercase shadow-xl transition-all ${selectedIndices.length === 3 ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Confirm Pass</button>
                     </>
                   ) : pendingDiscardIdx !== null ? (
-                    <div className="flex gap-2 animate-in slide-in-from-bottom-2">
-                       <button onClick={() => setPendingDiscardIdx(null)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-[9px] uppercase">Cancel</button>
-                       <button onClick={confirmDiscard} className="px-6 py-2 bg-red-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg">Discard</button>
+                    <div className="flex gap-2">
+                       <button onClick={() => setPendingDiscardIdx(null)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-[9px]">Cancel</button>
+                       <button onClick={confirmDiscard} className="px-6 py-2 bg-red-600 text-white rounded-xl font-black text-[9px] shadow-lg">Discard</button>
                     </div>
                   ) : gameState === 'playing' && (
-                    <button onClick={identifyBestHand} className="px-8 py-2 bg-slate-900 text-white rounded-xl font-black text-[9px] uppercase shadow-lg tracking-widest"><Target className="w-3 h-3 inline mr-1 text-yellow-400" /> Hand Identify</button>
+                    <button onClick={identifyBestHand} className="px-8 py-2 bg-slate-900 text-white rounded-xl font-black text-[9px] shadow-lg"><Target className="w-3 h-3 inline mr-1 text-yellow-400" /> Hand Identify</button>
                   )}
                </div>
             </div>
 
-            {/* DISCARD MINI HISTORY */}
-            <div className="flex-none bg-white p-2 rounded-xl border border-slate-200 shadow-sm opacity-50 grayscale hover:opacity-100 hover:grayscale-0 transition-all overflow-hidden h-14">
+            <div className="flex-none bg-white p-2 rounded-xl border border-slate-200 shadow-sm opacity-40 grayscale hover:opacity-100 hover:grayscale-0 transition-all overflow-hidden h-14">
               <h4 className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-widest flex items-center gap-1"><Search className="w-2 h-2" /> Discards</h4>
-              <div className="flex flex-wrap gap-1 content-start">{discards.map((t, i) => <div key={i} className="scale-[0.6] -m-1"><Tile tile={t} size="sm" /></div>)}</div>
+              <div className="flex flex-wrap gap-1 content-start">{discards.map((t, i) => <div key={i} className="scale-[0.5] -m-1.5"><Tile tile={t} size="sm" /></div>)}</div>
             </div>
           </div>
         )}
@@ -496,9 +490,9 @@ function App() {
             <div className="p-4 bg-slate-50 border-b flex justify-between items-center"><h3 className="font-black text-slate-800 uppercase tracking-widest text-xs">Target Library</h3><button onClick={() => setShowCard(false)} className="p-1 text-slate-400"><X /></button></div>
             <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-20 scrollbar-hide">
               {sessionCustomHands.length > 0 && (
-                <div><h4 className="text-blue-600 font-black text-[9px] uppercase tracking-widest mb-3 border-b pb-1">Session Custom</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{sessionCustomHands.map(h => (<div key={h.id} className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 relative"><button onClick={() => togglePin(h.id)} className={`absolute top-2 right-2 p-1 rounded-full ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3 h-3" /></button><div className="font-black text-slate-800 text-[10px] mb-1 uppercase tracking-tighter">{h.name}</div><div className="bg-white p-2 rounded-lg border border-slate-200 mb-1"><HandCode parts={h.parts} /></div><div className="text-[8px] font-bold text-slate-400 uppercase leading-snug">{h.desc}</div></div>))}</div></div>
+                <div><h4 className="text-blue-600 font-black text-[9px] uppercase tracking-widest mb-3 border-b pb-1">Session Custom</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{sessionCustomHands.map(h => (<div key={h.id} className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 relative shadow-sm"><button onClick={() => togglePin(h.id)} className={`absolute top-2 right-2 p-1 rounded-full ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3 h-3" /></button><div className="font-black text-slate-800 text-[10px] mb-1 uppercase tracking-tighter">{h.name}</div><div className="bg-white p-2 rounded-lg border border-slate-200 mb-1 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[8px] font-bold text-slate-400 uppercase leading-snug">{h.desc}</div><button onClick={() => setSessionCustomHands(p => p.filter(x => x.id !== h.id))} className="mt-3 text-red-400 text-[8px] font-black uppercase flex items-center gap-1 hover:text-red-600"><Trash className="w-2.5 h-2.5" /> Remove</button></div>))}</div></div>
               )}
-              <div><h4 className="text-slate-400 font-black text-[9px] uppercase tracking-widest mb-3 border-b pb-1">Standard Set</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{STANDARD_TEMPLATES.map(h => (<div key={h.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 relative"><button onClick={() => togglePin(h.id)} className={`absolute top-2 right-2 p-1 rounded-full ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3 h-3" /></button><div className="font-black text-slate-800 text-[10px] mb-1 uppercase tracking-tighter">{h.name}</div><div className="bg-white p-2 rounded-lg border border-slate-200 mb-1"><HandCode parts={h.parts} /></div><div className="text-[8px] font-bold text-slate-400 uppercase leading-snug">{h.desc}</div></div>))}</div></div>
+              <div><h4 className="text-slate-400 font-black text-[9px] uppercase tracking-widest mb-3 border-b pb-1">Standard Set</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{STANDARD_TEMPLATES.map(h => (<div key={h.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 relative shadow-sm hover:border-blue-300 transition-colors"><button onClick={() => togglePin(h.id)} className={`absolute top-2 right-2 p-1 rounded-full ${pinnedHandIds.includes(h.id) ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-400'}`}><Pin className="w-3.5 h-3.5" /></button><div className="font-black text-slate-800 text-[10px] mb-1 uppercase tracking-tighter uppercase">{h.name}</div><div className="bg-white p-2 rounded-lg border border-slate-200 mb-1 shadow-inner"><HandCode parts={h.parts} /></div><div className="text-[8px] font-bold text-slate-400 uppercase leading-snug">{h.desc}</div></div>))}</div></div>
             </div>
           </div>
         </div>
@@ -507,7 +501,7 @@ function App() {
       {gameState === 'finished' && (
         <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
           <div className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full text-center border-b-8 border-orange-600 shadow-2xl">
-            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4 shadow-sm" />
             <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">END OF WALL</h2>
             <button onClick={initGame} className="w-full mt-8 py-4 bg-orange-600 text-white rounded-2xl font-black text-md uppercase shadow-xl transition-all">Start New Session</button>
           </div>
@@ -515,13 +509,6 @@ function App() {
       )}
     </div>
   );
-}
-
-// MOUNTING BRIDGE
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(<App />);
 }
 
 export default App;
