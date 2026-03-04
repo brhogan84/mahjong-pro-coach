@@ -108,7 +108,7 @@ function App() {
   const [ghostStacks, setGhostStacks] = useState({ left: [], across: [], right: [] });
   const [charlestonStep, setCharlestonStep] = useState(0); 
   const [discards, setDiscards] = useState([]);
-  const [message, setMessage] = useState("V11.6 Ready");
+  const [message, setMessage] = useState("V11.7 Strategic Session");
   const [drawnTile, setDrawnTile] = useState(null);
   const [showCard, setShowCard] = useState(false);
   const [showDeadTiles, setShowDeadTiles] = useState(false);
@@ -140,7 +140,6 @@ function App() {
   const steps = ["Right", "Over (Across)", "Left", "Left", "Over (Across)", "Right"];
   const fullLibrary = useMemo(() => [...sessionCustomHands, ...STANDARD_TEMPLATES], [sessionCustomHands]);
 
-  // Derived "Dead" Tile calculation
   const deadTileCounts = useMemo(() => {
     const counts = {};
     discards.forEach(t => {
@@ -156,7 +155,6 @@ function App() {
     return () => { if(timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  // Analysis Effect
   useEffect(() => {
     if (gameState === 'charleston' && showCoach && hand.length === 13) {
       const selected = selectedIndices.map(i => hand[i]).filter(Boolean);
@@ -181,20 +179,14 @@ function App() {
     const fullDeck = createDeck();
     const pool = [...fullDeck];
     const dealtHand = pool.splice(0, 13);
-    
-    // EXCLUSIVE JOKER PROTOCOL: 
-    // Neighbors only get naturals for the Charleston.
     const naturalsForNeighbors = pool.filter(t => t.type !== 'joker');
     const remainingAfterNeighbors = pool.filter(t => t.type === 'joker');
-    
     const stacks = { left: [], across: [], right: [] };
     for(let i=0; i<6; i++) { 
         stacks.left.push(naturalsForNeighbors.splice(0,3)); 
         stacks.across.push(naturalsForNeighbors.splice(0,3)); 
         stacks.right.push(naturalsForNeighbors.splice(0,3)); 
     }
-    
-    // Remaining wall is all remaining tiles (including all Jokers and unused naturals)
     const wall = [...naturalsForNeighbors, ...remainingAfterNeighbors].sort(() => Math.random() - 0.5);
     
     setSelectedIndices([]); setDiscards([]); setDrawnTile(null);
@@ -244,7 +236,7 @@ function App() {
     setLastClickTime(now); setLastClickIndex(i);
     
     if (gameState === 'charleston') {
-      if (hand[i].type === 'joker') return; // ILLEGAL TO PASS JOKER
+      if (hand[i].type === 'joker') return;
       setSelectedIndices(prev => prev.includes(i) ? prev.filter(x => x !== i) : (prev.length < 3 ? [...prev, i] : prev));
       setAiSuggestionReason("");
     } else if (gameState === 'playing') {
@@ -284,9 +276,15 @@ function App() {
     if (pendingDiscardIdx === null) return;
     const userDiscarded = pendingDiscardIdx === -1 ? drawnTile : hand[pendingDiscardIdx];
     const newHand = pendingDiscardIdx === -1 ? [...hand] : hand.filter((_, idx) => idx !== pendingDiscardIdx);
+    
+    // Maintain exactly 13 tiles in the rack array at the end of the turn
     if (pendingDiscardIdx !== -1 && drawnTile) newHand.push(drawnTile);
+    
     setDiscards(p => [userDiscarded, ...p]);
-    setHand(newHand); setDrawnTile(null); setPendingDiscardIdx(null);
+    setHand(newHand.sort((a,b) => (a.suit||a.type).localeCompare(b.suit||b.type)));
+    setDrawnTile(null);
+    setPendingDiscardIdx(null);
+    
     if (deck.length > 0) {
       const dCopy = [...deck]; const ghostDraw = dCopy.shift(); setDeck(dCopy);
       setClaimableTile(ghostDraw); setClaimTimer(5);
@@ -333,7 +331,6 @@ function App() {
 
   const togglePin = (id) => setPinnedHandIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p].slice(-1).concat(id));
 
-  // Components for the Dead Tiles Screen
   const DeadTileGrid = () => {
     const categories = [
       { name: "Dots", items: [1,2,3,4,5,6,7,8,9].map(n => ({ val: n, suit: 'dots' })) },
@@ -343,7 +340,6 @@ function App() {
       { name: "Dragons", items: ['Green','Red','White'].map(d => ({ val: d, type: 'dragon' })) },
       { name: "Special", items: [{ val: 'F', type: 'flower' }, { val: 'J', type: 'joker' }] }
     ];
-
     return (
       <div className="space-y-6">
         {categories.map(cat => (
@@ -372,7 +368,7 @@ function App() {
       <div className="flex-none bg-slate-900 text-white p-3 flex justify-between items-center border-b-4 border-orange-500 shadow-xl">
         <div className="flex items-center gap-2">
           <Brain className="w-6 h-6 text-orange-500" />
-          <h1 className="text-lg font-black text-yellow-400 leading-none tracking-tighter uppercase">Pro Coach V11.6</h1>
+          <h1 className="text-lg font-black text-yellow-400 leading-none tracking-tighter uppercase">Pro Coach V11.7</h1>
         </div>
         <div className="flex gap-2">
           {gameState !== 'menu' && (
@@ -387,7 +383,7 @@ function App() {
           <div className="flex-1 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in">
             <Zap className="w-12 h-12 text-orange-500 mb-4" />
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter mb-2 uppercase tracking-widest">Strategic Pro.</h2>
-            <p className="max-w-xs text-slate-500 text-xs font-medium mb-8 italic">Verified NMJL rules: Jokers never move during Charleston. Auto-sorting and Dead Tile tracking enabled.</p>
+            <p className="max-w-xs text-slate-500 text-xs font-medium mb-8 italic">Verified NMJL rules: Jokers never pass. Track dead tiles and path requirements in real-time.</p>
             <div className="flex flex-col gap-3 w-full max-w-xs">
               <button onClick={initGame} className="py-4 bg-orange-600 text-white rounded-2xl font-black text-lg shadow-xl uppercase tracking-tighter transition-all hover:bg-orange-700 active:scale-95">Start Training</button>
               <button onClick={() => setGameState('creator')} className="py-4 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-xl uppercase tracking-tighter transition-all hover:bg-black active:scale-95">Hand Lab</button>
@@ -396,7 +392,7 @@ function App() {
         ) : gameState === 'creator' ? (
           <div className="flex-1 overflow-y-auto space-y-4 p-2">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-black uppercase tracking-tighter"><Brain className="w-4 h-4 inline mr-2 text-blue-600" /> Hand Designer</h3>
+              <h3 className="text-lg font-black uppercase tracking-tighter"><Brain className="w-4 h-4 inline mr-2 text-blue-600" /> Designer</h3>
               <button onClick={() => setGameState('menu')}><X className="w-5 h-5 text-slate-400" /></button>
             </div>
             {creatorError && <div className="bg-red-50 border-2 border-red-100 p-3 rounded-xl text-red-600 text-[10px] font-bold uppercase">{creatorError}</div>}
@@ -500,7 +496,7 @@ function App() {
                               setHand(hand.filter((_, i) => !selectedIndices.includes(i)));
                               setClaimableTile(null); setIsClaimingMode(false); setSelectedIndices([]);
                               setMessage("Exposure finalized.");
-                            } else { setMessage("Invalid: Call requires 2 matching tiles."); }
+                            } else { setMessage("Invalid Call."); }
                           }} className="bg-green-600 text-white px-4 py-1.5 rounded-lg font-black text-[9px] uppercase shadow-md transition-all hover:bg-green-700">Finish</button>
                         )}
                         <button onClick={() => { setClaimableTile(null); setIsClaimingMode(false); setSelectedIndices([]); }} className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
@@ -538,15 +534,13 @@ function App() {
                       <button onClick={suggestPass} className="px-3 py-2 bg-white border-2 border-slate-200 rounded-xl font-black text-[8px] flex items-center gap-1.5 shadow-md transition-all hover:bg-slate-50 uppercase tracking-widest"><Brain className="w-3 h-3 text-orange-500" /> AI Help</button>
                       <button onClick={processPass} disabled={selectedIndices.length !== 3} className={`px-6 py-2 rounded-xl font-black text-[9px] flex items-center gap-1.5 uppercase shadow-xl transition-all ${selectedIndices.length === 3 ? 'bg-slate-900 text-white hover:bg-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Confirm Pass</button>
                     </>
-                  ) : pendingDiscardIdx !== null ? (
-                    <div className="flex gap-2">
-                       <button onClick={() => setPendingDiscardIdx(null)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl font-bold text-[9px] transition-all hover:bg-slate-50 uppercase tracking-tighter">Cancel</button>
-                       <button onClick={confirmDiscard} className="px-6 py-2 bg-red-600 text-white rounded-xl font-black text-[9px] shadow-lg transition-all hover:bg-red-700 uppercase tracking-tighter">Discard</button>
-                    </div>
-                  ) : gameState === 'playing' && (
+                  ) : (
                     <div className="flex gap-2">
                       <button onClick={() => setShowDeadTiles(true)} className="bg-red-900/40 hover:bg-red-900 text-red-100 px-4 py-2 rounded-xl text-[9px] font-black uppercase flex items-center gap-1.5 shadow-md"><Trash2 className="w-3.5 h-3.5" /> Dead Tracker</button>
                       <button onClick={identifyBestHand} className="px-8 py-2 bg-slate-900 text-white rounded-xl font-black text-[9px] shadow-lg transition-all hover:bg-black uppercase tracking-widest"><Target className="w-3 h-3 inline mr-1 text-yellow-400" /> Identify Path</button>
+                      {pendingDiscardIdx !== null && (
+                         <button onClick={confirmDiscard} disabled={!drawnTile && pendingDiscardIdx !== -1} className={`px-6 py-2 bg-red-600 text-white rounded-xl font-black text-[9px] shadow-lg transition-all hover:bg-red-700 ${(!drawnTile && pendingDiscardIdx !== -1) ? 'opacity-50 grayscale cursor-not-allowed' : ''}`}>Discard</button>
+                      )}
                     </div>
                   )}
                </div>
