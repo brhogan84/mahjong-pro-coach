@@ -96,7 +96,7 @@ export default function App() {
   const [claimableTile, setClaimableTile] = useState(null);
   const [claimTimer, setClaimTimer] = useState(0);
   const [isClaimingMode, setIsClaimingMode] = useState(false);
-  const [message, setMessage] = useState("V12.2 Engine Ready");
+  const [message, setMessage] = useState("V12.3 Logic Stabilized");
   const [showCard, setShowCard] = useState(false);
   const [showDeadTiles, setShowDeadTiles] = useState(false);
   const [showWinDeclare, setShowWinDeclare] = useState(false);
@@ -201,37 +201,29 @@ export default function App() {
 
   const processPassRound = () => {
     const charPassSteps = ["Right", "Over", "Left", "Left", "Over", "Right"];
-    
-    // Check all humans for selection completion
     const humansStillSelecting = players.filter(p => p.type === 'human' && p.selectedIndices.length !== 3);
     if (humansStillSelecting.length > 0) {
       const handIds = humansStillSelecting.map(h => h.id + 1).join(", ");
       setMessage(`Hand(s) ${handIds} still need 3 tiles selected.`);
       return;
     }
-
     const passOffsets = { "Right": 1, "Left": -1, "Over": 2 };
     const currentStepName = charPassSteps[charlestonStep];
     const offset = passOffsets[currentStepName];
-
-    // Collect Data
     const outgoingData = players.map(p => {
       const idxs = p.type === 'human' ? p.selectedIndices : getGhostPassIndices(p);
       const tilesToPass = idxs.map(i => p.hand[i]);
       const remainingHand = p.hand.filter((_, i) => !idxs.includes(i));
       return { tilesToPass, remainingHand };
     });
-
-    // Update state immutably
     const nextPlayers = players.map((p, i) => {
-        const senderIdx = (i - offset + 4) % 4; // Who is passing TO me?
+        const senderIdx = (i - offset + 4) % 4; 
         return {
             ...p,
             hand: [...outgoingData[i].remainingHand, ...outgoingData[senderIdx].tilesToPass].sort((a,b) => (a.suit||a.type||'').localeCompare(b.suit||b.type||'')),
             selectedIndices: []
         };
     });
-
     setPlayers(nextPlayers);
     if (charlestonStep < 5) {
       setCharlestonStep(p => p + 1);
@@ -245,7 +237,6 @@ export default function App() {
   const handleTileClick = (pIdx, tIdx) => {
     if (pIdx !== activeHumanView) return; 
     const now = Date.now();
-    
     if (movingIndex !== null) {
       if (movingIndex === tIdx) setMovingIndex(null);
       else {
@@ -261,7 +252,6 @@ export default function App() {
       setMovingIndex(tIdx); return;
     }
     setLastClickTime(now); setLastClickIndex(tIdx);
-
     if (gameState === 'charleston') {
       const newPlayers = [...players];
       const p = newPlayers[pIdx];
@@ -288,16 +278,13 @@ export default function App() {
     const tile = tIdx === -1 ? p.drawnTile : p.hand[tIdx];
     const newHand = tIdx === -1 ? [...p.hand] : p.hand.filter((_, i) => i !== tIdx);
     if (tIdx !== -1 && p.drawnTile) newHand.push(p.drawnTile);
-
     setDiscards(prev => [tile, ...prev]);
     const updatedPlayers = [...players];
     updatedPlayers[activeHumanView].hand = newHand;
     updatedPlayers[activeHumanView].drawnTile = null;
     setPlayers(updatedPlayers);
-    
     setClaimableTile(tile);
     setClaimTimer(5);
-    
     if(timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setClaimTimer(t => {
@@ -316,24 +303,19 @@ export default function App() {
     const nextIdx = (activePlayerIndex + 1) % 4;
     setActivePlayerIndex(nextIdx);
     const p = players[nextIdx];
-    
     if (p.type === 'ghost') {
       const dCopy = [...deck];
       const drawn = dCopy.shift();
       setDeck(dCopy);
-      
       const fullHand = [...p.hand, drawn];
       const nonValuableIdx = fullHand.findIndex(t => t.type !== 'joker' && t.type !== 'flower');
       const finalIdx = nonValuableIdx === -1 ? 0 : nonValuableIdx;
       const discarded = fullHand[finalIdx];
-      
       const updatedPlayers = [...players];
       updatedPlayers[nextIdx].hand = fullHand.filter((_, i) => i !== finalIdx);
       setPlayers(updatedPlayers);
-
       setClaimableTile(discarded);
       setClaimTimer(5);
-      
       if(timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setClaimTimer(t => {
@@ -356,7 +338,6 @@ export default function App() {
     const p = players[activeHumanView];
     const fullPool = [...p.hand]; if (p.drawnTile) fullPool.push(p.drawnTile); p.exposures.forEach(e => fullPool.push(...e));
     const jokers = fullPool.filter(t => t.type === 'joker').length;
-    
     const results = STANDARD_TEMPLATES.map(h => {
       let matches = 0;
       let temp = fullPool.map(t => ({...t, valStr: (t.val === 'White' || t.val === 0) ? '0' : t.val.toString()})).filter(t => t.type !== 'joker');
@@ -376,12 +357,9 @@ export default function App() {
     const p = players[activeHumanView];
     const fullPool = [...p.hand]; if (p.drawnTile) fullPool.push(p.drawnTile); p.exposures.forEach(e => fullPool.push(...e));
     if (fullPool.length !== 14) return { valid: false, msg: "Exactly 14 tiles required to win." };
-
     let jokers = fullPool.filter(t => t.type === 'joker').length;
     let naturals = fullPool.map(t => ({...t, valStr: (t.val === 'White' || t.val === 0) ? '0' : t.val.toString()})).filter(t => t.type !== 'joker');
-    
     if (handTemplate.type === "C" && jokers > 0) return { valid: false, msg: "Concealed hands allow 0 Jokers." };
-
     let matches = 0;
     handTemplate.parts.forEach(part => {
       for (let char of part.t) {
@@ -389,38 +367,28 @@ export default function App() {
         if (foundIdx !== -1) { matches++; naturals.splice(foundIdx, 1); }
       }
     });
-
     return (matches + jokers) >= 14 ? { valid: true, msg: "MAHJONG VERIFIED!" } : { valid: false, msg: "Verification failed. Check your tiles." };
   };
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 font-sans text-slate-100 overflow-hidden">
-      
-      {/* HEADER */}
       <div className="flex-none p-3 bg-slate-800 flex justify-between items-center border-b-2 border-orange-600 shadow-lg">
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-orange-500" />
-          <h1 className="text-sm font-black uppercase tracking-tighter">Pro Master V12.2</h1>
+          <h1 className="text-sm font-black uppercase tracking-tighter">Pro Master V12.3</h1>
         </div>
         <div className="flex gap-1.5">
           {gameState !== 'menu' && gameState !== 'setup' && (
             <div className="flex bg-slate-700 rounded-lg p-0.5">
               {players.filter(p => p.type === 'human').map(p => (
-                <button 
-                  key={p.id}
-                  onClick={() => { setActiveHumanView(p.id); setBestMatch(null); }}
-                  className={`px-2 py-1 text-[8px] font-black uppercase rounded transition-all ${activeHumanView === p.id ? 'bg-orange-600 text-white shadow-inner' : 'text-slate-400 hover:text-white'}`}
-                >H{p.id + 1}</button>
+                <button key={p.id} onClick={() => { setActiveHumanView(p.id); setBestMatch(null); }} className={`px-2 py-1 text-[8px] font-black uppercase rounded transition-all ${activeHumanView === p.id ? 'bg-orange-600 text-white shadow-inner' : 'text-slate-400 hover:text-white'}`}>H{p.id + 1}</button>
               ))}
             </div>
           )}
           <button onClick={() => setGameState('menu')} className="p-1.5 bg-slate-700 rounded-lg hover:bg-slate-600"><RotateCcw className="w-4 h-4" /></button>
         </div>
       </div>
-
       <div className="flex-1 relative">
-        
-        {/* VIEW: MENU */}
         {gameState === 'menu' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in">
             <Layers className="w-16 h-16 text-orange-500 mb-6" />
@@ -432,8 +400,6 @@ export default function App() {
             </div>
           </div>
         )}
-
-        {/* VIEW: SETUP */}
         {gameState === 'setup' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 animate-in slide-in-from-bottom-4">
              <div className="bg-slate-800 p-8 rounded-[3rem] w-full max-w-sm border-2 border-slate-700 shadow-2xl space-y-6">
@@ -441,27 +407,19 @@ export default function App() {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Human Seats</label>
                   <div className="flex gap-2">
-                    {[1,2,3,4].map(n => (
-                      <button key={n} onClick={() => setNumHumans(n)} className={`flex-1 py-3 rounded-xl font-black border-2 transition-all ${numHumans === n ? 'bg-blue-600 border-blue-400 shadow-lg' : 'bg-slate-700 border-slate-600 text-slate-400'}`}>{n}</button>
-                    ))}
+                    {[1,2,3,4].map(n => (<button key={n} onClick={() => setNumHumans(n)} className={`flex-1 py-3 rounded-xl font-black border-2 transition-all ${numHumans === n ? 'bg-blue-600 border-blue-400 shadow-lg' : 'bg-slate-700 border-slate-600 text-slate-400'}`}>{n}</button>))}
                   </div>
                 </div>
                 <div className="flex justify-between items-center py-4 border-t border-slate-700">
                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Include Ghosts?</label>
-                  <button onClick={() => setIncludeGhosts(!includeGhosts)} className={`w-12 h-6 rounded-full relative transition-all ${includeGhosts ? 'bg-green-600 shadow-lg' : 'bg-slate-600'}`}>
-                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${includeGhosts ? 'right-1' : 'left-1'}`} />
-                  </button>
+                  <button onClick={() => setIncludeGhosts(!includeGhosts)} className={`w-12 h-6 rounded-full relative transition-all ${includeGhosts ? 'bg-green-600 shadow-lg' : 'bg-slate-600'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${includeGhosts ? 'right-1' : 'left-1'}`} /></button>
                 </div>
                 <button onClick={initGame} className="w-full bg-orange-600 py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-orange-500 transition-all">Deal Tiles</button>
              </div>
           </div>
         )}
-
-        {/* VIEW: GAMEBOARD */}
         {(gameState === 'charleston' || gameState === 'playing') && (
           <div className="flex flex-col h-full p-2 gap-2">
-             
-             {/* SIDES HUD */}
              <div className="flex-none h-20 grid grid-cols-3 gap-2">
                 {[3, 2, 1].map(offset => {
                     const pIdx = (activeHumanView + offset) % 4;
@@ -474,8 +432,6 @@ export default function App() {
                     );
                 })}
              </div>
-
-             {/* CENTER ZONE */}
              <div className="flex-1 bg-slate-950/30 border-2 border-slate-800/50 rounded-[2.5rem] flex flex-col p-4 shadow-inner relative overflow-hidden">
                 <div className="flex-1 flex items-center justify-center">
                   {claimableTile ? (
@@ -484,14 +440,9 @@ export default function App() {
                        <Tile tile={claimableTile} size="lg" isClaimable={true} />
                     </div>
                   ) : (
-                    <div className="text-center opacity-5">
-                      <Target className="w-12 h-12 mx-auto mb-2" />
-                      <p className="text-[8px] font-black uppercase tracking-widest">Center Table</p>
-                    </div>
+                    <div className="text-center opacity-5"><Target className="w-12 h-12 mx-auto mb-2" /><p className="text-[8px] font-black uppercase tracking-widest">Center Table</p></div>
                   )}
                 </div>
-                
-                {/* IDENTIFY BANNER */}
                 {bestMatch && (
                     <div className="absolute top-4 left-4 right-4 bg-yellow-50/10 backdrop-blur-md border border-yellow-500/30 p-2 rounded-xl flex flex-col gap-1.5 animate-in slide-in-from-top-2">
                         <div className="flex justify-between items-center">
@@ -501,13 +452,8 @@ export default function App() {
                         <div className="bg-black/20 p-1.5 rounded-lg border border-white/5"><HandCode parts={bestMatch.parts} /></div>
                     </div>
                 )}
-
-                <div className="flex-none h-12 bg-slate-900 rounded-2xl p-1 overflow-x-auto flex items-center gap-1 border border-slate-800">
-                   {discards.slice(0, 10).map((t, i) => <Tile key={i} tile={t} size="sm" isExposed={true} />)}
-                </div>
+                <div className="flex-none h-12 bg-slate-900 rounded-2xl p-1 overflow-x-auto flex items-center gap-1 border border-slate-800">{discards.slice(0, 10).map((t, i) => <Tile key={i} tile={t} size="sm" isExposed={true} />)}</div>
              </div>
-
-             {/* RACK HUB */}
              <div className="flex-none bg-slate-800 p-3 rounded-[2rem] border-t-4 border-orange-500 shadow-2xl space-y-3">
                 <div className="flex justify-between items-center px-2">
                   <div className="flex items-center gap-2">
@@ -519,18 +465,8 @@ export default function App() {
                     <button onClick={() => sortHand('val')} className="p-2 bg-slate-700 rounded-lg text-[8px] font-black uppercase hover:bg-slate-600">Val</button>
                   </div>
                 </div>
-
                 <div className="flex flex-wrap justify-center gap-0.5 min-h-[60px]">
-                  {players[activeHumanView].hand.map((t, i) => (
-                    <Tile 
-                      key={t.id} 
-                      tile={t} 
-                      onClick={() => handleTileClick(activeHumanView, i)} 
-                      isSelected={players[activeHumanView].selectedIndices.includes(i)}
-                      isMoving={movingIndex === i}
-                      size="md"
-                    />
-                  ))}
+                  {players[activeHumanView].hand.map((t, i) => (<Tile key={t.id} tile={t} onClick={() => handleTileClick(activeHumanView, i)} isSelected={players[activeHumanView].selectedIndices.includes(i)} isMoving={movingIndex === i} size="md" />))}
                   {gameState === 'playing' && activePlayerIndex === activeHumanView && (
                     <div className="ml-2 pl-2 border-l border-slate-600 flex items-center">
                        {players[activeHumanView].drawnTile ? (
@@ -541,16 +477,11 @@ export default function App() {
                     </div>
                   )}
                 </div>
-
                 <div className="flex justify-center gap-2 pt-2">
                    {gameState === 'charleston' ? (
                      <>
                         <button onClick={suggestPass} className="bg-slate-700 px-4 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-600 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-orange-400" /> Suggest</button>
-                        <button 
-                            onClick={processPassRound}
-                            disabled={players[activeHumanView].selectedIndices.length !== 3}
-                            className={`flex-1 py-3 rounded-xl font-black uppercase text-sm shadow-xl transition-all ${players[activeHumanView].selectedIndices.length === 3 ? 'bg-orange-600 text-white hover:bg-orange-500' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
-                        >Confirm Pass</button>
+                        <button onClick={processPassRound} disabled={players[activeHumanView].selectedIndices.length !== 3} className={`flex-1 py-3 rounded-xl font-black uppercase text-sm shadow-xl transition-all ${players[activeHumanView].selectedIndices.length === 3 ? 'bg-orange-600 text-white hover:bg-orange-500' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Confirm Pass</button>
                      </>
                    ) : (
                      <div className="flex gap-1.5 w-full">
@@ -564,15 +495,10 @@ export default function App() {
           </div>
         )}
       </div>
-
-      {/* OVERLAY: DEAD TILES */}
       {showDeadTiles && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-800 w-full max-w-4xl max-h-[85vh] rounded-[3rem] border-2 border-slate-700 overflow-hidden flex flex-col shadow-2xl">
-            <div className="p-6 bg-slate-700 flex justify-between items-center border-b border-slate-600">
-              <h3 className="font-black uppercase tracking-widest text-xs tracking-tighter flex items-center gap-2">Dead Tile Tracker</h3>
-              <button onClick={() => setShowDeadTiles(false)} className="p-2 hover:bg-slate-600 rounded-full"><X /></button>
-            </div>
+            <div className="p-6 bg-slate-700 flex justify-between items-center border-b border-slate-600"><h3 className="font-black uppercase tracking-widest text-xs tracking-tighter flex items-center gap-2">Dead Tile Tracker</h3><button onClick={() => setShowDeadTiles(false)} className="p-2 hover:bg-slate-600 rounded-full"><X /></button></div>
             <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
                <div className="space-y-6">
                 {['Dots', 'Bams', 'Cracks', 'Winds', 'Dragons', 'Special'].map(cat => (
@@ -602,44 +528,35 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* OVERLAY: WIN DECLARE */}
       {showWinDeclare && (
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-slate-800 w-full max-w-2xl max-h-[70vh] rounded-[3rem] border-2 border-slate-700 overflow-hidden flex flex-col shadow-2xl">
-                <div className="p-5 bg-slate-700 flex justify-between items-center border-b border-slate-600">
-                    <h3 className="font-black uppercase tracking-widest text-xs flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-500" /> Win Verification</h3>
-                    <button onClick={() => setShowWinDeclare(false)} className="p-1 text-slate-400 hover:text-white"><X /></button>
-                </div>
+                <div className="p-5 bg-slate-700 flex justify-between items-center border-b border-slate-600"><h3 className="font-black uppercase tracking-widest text-xs flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-500" /> Win Verification</h3><button onClick={() => setShowWinDeclare(false)} className="p-1 text-slate-400 hover:text-white"><X /></button></div>
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {STANDARD_TEMPLATES.map(h => (
                         <button key={h.id} onClick={() => {
-                            const res = checkMahjong(h);
-                            setMessage(res.msg);
+                            const res = checkMahjong(h); setMessage(res.msg);
                             if(res.valid) setGameState('finished');
                             setShowWinDeclare(false);
                         }} className="w-full text-left p-4 bg-slate-700/50 border-2 border-slate-600 rounded-2xl hover:border-green-500 transition-all group">
-                            <p className="text-[8px] font-black uppercase text-blue-400 mb-1">{h.section} | {h.type}</p>
-                            <p className="font-black text-xs uppercase mb-2">{h.name}</p>
-                            <HandCode parts={h.parts} />
+                            <p className="text-[8px] font-black uppercase text-blue-400 mb-1">{h.section} | {h.type}</p><p className="font-black text-xs uppercase mb-2">{h.name}</p><HandCode parts={h.parts} />
                         </button>
                     ))}
                 </div>
             </div>
         </div>
       )}
-
       {gameState === 'finished' && (
         <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 z-[100]">
-           <div className="bg-slate-800 rounded-[3rem] p-10 max-w-sm w-full text-center border-b-8 border-orange-600 shadow-2xl space-y-4">
-              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
-              <h2 className="text-3xl font-black uppercase">Session End</h2>
-              <p className="text-xs font-bold text-slate-400 uppercase italic tracking-widest">{message}</p>
-              <button onClick={initGame} className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase shadow-xl transition-all hover:bg-orange-500">Play Again</button>
-           </div>
+           <div className="bg-slate-800 rounded-[3rem] p-10 max-w-sm w-full text-center border-b-8 border-orange-600 shadow-2xl space-y-4"><CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" /><h2 className="text-3xl font-black uppercase">Session End</h2><p className="text-xs font-bold text-slate-400 uppercase italic tracking-widest">{message}</p><button onClick={initGame} className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase shadow-xl transition-all hover:bg-orange-500">Play Again</button></div>
         </div>
       )}
-
     </div>
   );
+}
+
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(<App />);
 }
