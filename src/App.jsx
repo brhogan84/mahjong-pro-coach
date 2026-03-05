@@ -96,7 +96,7 @@ export default function App() {
   const [claimableTile, setClaimableTile] = useState(null);
   const [claimTimer, setClaimTimer] = useState(0);
   const [isClaimingMode, setIsClaimingMode] = useState(false);
-  const [message, setMessage] = useState("V12.4 Logic Ready");
+  const [message, setMessage] = useState("V12.5 Optimized");
   const [showCard, setShowCard] = useState(false);
   const [showDeadTiles, setShowDeadTiles] = useState(false);
   const [showWinDeclare, setShowWinDeclare] = useState(false);
@@ -201,11 +201,13 @@ export default function App() {
 
   const processPassRound = () => {
     const charPassSteps = ["Right", "Over", "Left", "Left", "Over", "Right"];
-    const humansStillSelecting = players.filter(p => p.type === 'human' && p.selectedIndices.length !== 3);
     
+    // Switch view to next human hand that needs selection
+    const humansStillSelecting = players.filter(p => p.type === 'human' && p.selectedIndices.length !== 3);
     if (humansStillSelecting.length > 0) {
-      const handIds = humansStillSelecting.map(h => h.id + 1).join(", ");
-      setMessage(`Hand(s) ${handIds} still need 3 tiles selected.`);
+      const nextSeat = humansStillSelecting[0];
+      setActiveHumanView(nextSeat.id);
+      setMessage(`Hand ${nextSeat.id + 1} needs 3 selections before passing.`);
       return;
     }
 
@@ -213,7 +215,7 @@ export default function App() {
     const currentStepName = charPassSteps[charlestonStep];
     const offset = passOffsets[currentStepName];
 
-    // Collect Data first to avoid mutation issues during loop
+    // Deep clone players and collect pass data
     const outgoingData = players.map(p => {
       const idxs = p.type === 'human' ? p.selectedIndices : getGhostPassIndices(p);
       const tilesToPass = idxs.map(i => p.hand[i]);
@@ -222,7 +224,7 @@ export default function App() {
     });
 
     const nextPlayers = players.map((p, i) => {
-        const senderIdx = (i - offset + 4) % 4; // Who is passing TO me?
+        const senderIdx = (i - offset + 4) % 4; // Source of incoming tiles
         return {
             ...p,
             hand: [...outgoingData[i].remainingHand, ...outgoingData[senderIdx].tilesToPass].sort((a,b) => (a.suit||a.type||'').localeCompare(b.suit||b.type||'')),
@@ -237,7 +239,9 @@ export default function App() {
       setMessage(`Step ${charlestonStep + 2}: Pass to the ${nextStep}`);
     } else {
       setGameState('playing');
-      setMessage("Charleston complete. East (Human 1) begins.");
+      setActivePlayerIndex(0); // East starts
+      setActiveHumanView(0);
+      setMessage("Charleston complete. East (Hand 1) begins.");
     }
   };
 
@@ -268,6 +272,8 @@ export default function App() {
       if (p.selectedIndices.includes(tIdx)) p.selectedIndices = p.selectedIndices.filter(x => x !== tIdx);
       else if (p.selectedIndices.length < 3) p.selectedIndices.push(tIdx);
       setPlayers(newPlayers);
+    } else if (gameState === 'playing' && activePlayerIndex === activeHumanView) {
+        setPendingDiscardIdx(tIdx);
     }
   };
 
@@ -281,7 +287,7 @@ export default function App() {
     newPlayers[activeHumanView].drawnTile = pulled;
     setDeck(dCopy);
     setPlayers(newPlayers);
-    setMessage("Turn Active: Select a tile to DISCARD.");
+    setMessage("Select a tile to DISCARD.");
   };
 
   const confirmDiscard = (tIdx) => {
@@ -352,6 +358,7 @@ export default function App() {
       }, 1000);
     } else {
         setMessage(`Hand ${nextIdx + 1}'s Turn. Draw or Call.`);
+        setActiveHumanView(nextIdx); // Auto-rotate focus to active human turn
     }
   };
 
@@ -378,12 +385,12 @@ export default function App() {
   const checkMahjong = (handTemplate) => {
     const p = players[activeHumanView];
     const fullPool = [...p.hand]; if (p.drawnTile) fullPool.push(p.drawnTile); p.exposures.forEach(e => fullPool.push(...e));
-    if (fullPool.length !== 14) return { valid: false, msg: "Mahjong requires 14 tiles total." };
+    if (fullPool.length !== 14) return { valid: false, msg: "Exactly 14 tiles required to win." };
 
     let jokers = fullPool.filter(t => t.type === 'joker').length;
     let naturals = fullPool.map(t => ({...t, valStr: (t.val === 'White' || t.val === 0) ? '0' : t.val.toString()})).filter(t => t.type !== 'joker');
     
-    if (handTemplate.type === "C" && jokers > 0) return { valid: false, msg: "Illegal: Concealed hands allow 0 Jokers." };
+    if (handTemplate.type === "C" && jokers > 0) return { valid: false, msg: "Concealed hands allow 0 Jokers." };
 
     let matches = 0;
     handTemplate.parts.forEach(part => {
@@ -403,7 +410,7 @@ export default function App() {
       <div className="flex-none p-3 bg-slate-800 flex justify-between items-center border-b-2 border-orange-600 shadow-lg">
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-orange-500" />
-          <h1 className="text-sm font-black uppercase tracking-tighter">Pro Master V12.4</h1>
+          <h1 className="text-sm font-black uppercase tracking-tighter">Pro Master V12.5</h1>
         </div>
         <div className="flex gap-1.5">
           {gameState !== 'menu' && gameState !== 'setup' && (
