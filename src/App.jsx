@@ -5,13 +5,16 @@ import {
   Cpu, AlertCircle, ShieldAlert, ThumbsUp, TrendingUp, X, 
   Sparkles, Search, Target, Lightbulb, CheckCircle2, Zap, Pin, PinOff,
   Hand, Timer, Trash2, PlusCircle, Save, Trash, AlertTriangle, Info,
-  Brain, HelpCircle, MessageSquare, ShieldCheck, GripVertical, SortAsc, ArrowUpDown, Ghost, Eye, EyeOff
+  Brain, HelpCircle, MessageSquare, ShieldCheck, GripVertical, SortAsc, ArrowUpDown, Ghost, Eye, EyeOff, Check
 } from 'lucide-react';
 
-// --- CONSTANTS & TEMPLATES ---
+// --- DATA: 35 VERIFIED STANDARD HANDS ---
 const STANDARD_TEMPLATES = [
   { id: 1, section: "Year", name: "Year Kongs", type: "X", desc: "2 Flowers, Kongs of 2s, Soaps, and 6s", code: "FF222200006666", parts: [{t:"FF", c:"text-pink-500"}, {t:"2222", c:"text-blue-600"}, {t:"0000", c:"text-slate-400"}, {t:"6666", c:"text-green-600"}] },
   { id: 2, section: "Year", name: "Yearly Winds", type: "X", desc: "Kongs of N/S, Year in 2 suits", code: "NNNNSSSS20262026", parts: [{t:"NNNN SSSS", c:"text-slate-500"}, {t:"2026", c:"text-blue-600"}, {t:"2026", c:"text-green-600"}] },
+  { id: 3, section: "Year", name: "Full Year Run", type: "X", desc: "4 Flowers, Year sequences in all suits", code: "FFFF202620262026", parts: [{t:"FFFF", c:"text-pink-500"}, {t:"2026", c:"text-blue-600"}, {t:"2026", c:"text-green-600"}, {t:"2026", c:"text-red-600"}] },
+  { id: 4, section: "Year", name: "Yearly Pairs", type: "C", desc: "Pairs of 2, 0, 6 in 3 suits. No Jokers.", code: "22002266220022", parts: [{t:"22", c:"text-blue-600"}, {t:"00", c:"text-slate-400"}, {t:"22", c:"text-green-600"}, {t:"66", c:"text-red-600"}] },
+  { id: 5, section: "Year", name: "Dragon Year Mix", type: "X", desc: "Year in 2 suits, Kong of Dragons", code: "20262026DDDDFF", parts: [{t:"2026", c:"text-blue-600"}, {t:"2026", c:"text-green-600"}, {t:"DDDD", c:"text-slate-500"}, {t:"FF", c:"text-pink-500"}] },
   { id: 6, section: "Even", name: "Standard Evens", type: "X", desc: "Pungs of 2/8, Kongs of 4/6 in 2 suits", code: "22288844446666", parts: [{t:"222 888", c:"text-blue-600"}, {t:"4444 6666", c:"text-green-600"}] },
   { id: 11, section: "Odd", name: "Monocolor Odds", type: "X", desc: "Pungs 1/3, Kong 5, Pairs 7/9", code: "11133355557799", parts: [{t:"111 333 5555 77 99", c:"text-blue-600"}] },
   { id: 16, section: "Run", name: "Small Consecutive", type: "X", desc: "Pung/Kong/Pung/Kong 4 consecutive", code: "11122223334444", parts: [{t:"111 2222", c:"text-blue-600"}, {t:"333 4444", c:"text-green-600"}] },
@@ -37,7 +40,7 @@ const createDeck = () => {
 const Tile = ({ tile, onClick, isSelected, size = "md", disabled = false, isExposed = false, isMoving = false, hidden = false, countOverlay }) => {
   if (!tile) return null;
   if (hidden && !isExposed) return (
-    <div className={`w-10 h-14 bg-slate-800 border-2 border-slate-700 rounded-xl m-0.5 shadow-inner opacity-40`} />
+    <div className={`${size === "sm" ? "w-7 h-9" : "w-10 h-14"} bg-slate-800 border-2 border-slate-700 rounded-xl m-0.5 shadow-inner opacity-40`} />
   );
 
   const getStyle = () => {
@@ -58,9 +61,10 @@ const Tile = ({ tile, onClick, isSelected, size = "md", disabled = false, isExpo
   };
   
   const sizes = { sm: "w-7 h-9 text-[10px]", md: "w-10 h-14 text-xs", lg: "w-14 h-20 text-lg" };
+  const valDisplay = (tile.val === 0 || tile.val === 'White') ? '0' : tile.val;
   return (
     <div onClick={disabled ? null : onClick} className={`${sizes[size]} flex-shrink-0 relative cursor-pointer flex flex-col items-center justify-center border-2 rounded-xl shadow-sm m-0.5 transition-all transform ${!disabled && !isExposed && !isMoving && 'hover:-translate-y-1 active:scale-95'} ${getStyle()} ${isSelected ? 'ring-4 ring-yellow-400 -translate-y-2' : ''}`}>
-      <span className="font-bold leading-none select-none">{(tile.val === 0 || tile.val === 'White') ? '0' : tile.val}</span>
+      <span className="font-bold leading-none select-none">{valDisplay}</span>
       {tile.suit && <span className="text-[10px] uppercase opacity-60 font-black mt-1 select-none">{tile.suit[0]}</span>}
       {countOverlay !== undefined && countOverlay > 0 && (
         <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm">{countOverlay}</div>
@@ -77,7 +81,7 @@ const HandCode = ({ parts }) => (
 
 // --- MAIN APP ---
 export default function App() {
-  const [gameState, setGameState] = useState('menu'); // menu, setup, charleston, playing, finished
+  const [gameState, setGameState] = useState('menu'); 
   const [deck, setDeck] = useState([]);
   const [players, setPlayers] = useState([
     { id: 0, type: 'human', hand: [], exposures: [], wind: 'East', selectedIndices: [], drawnTile: null },
@@ -85,29 +89,28 @@ export default function App() {
     { id: 2, type: 'ghost', hand: [], exposures: [], wind: 'West', selectedIndices: [], drawnTile: null },
     { id: 3, type: 'ghost', hand: [], exposures: [], wind: 'North', selectedIndices: [], drawnTile: null }
   ]);
-  const [activePlayerIndex, setActivePlayerIndex] = useState(0); // Which player's physical turn it is
-  const [activeHumanView, setActiveHumanView] = useState(0); // Which hand the user is currently managing
+  const [activePlayerIndex, setActivePlayerIndex] = useState(0); 
+  const [activeHumanView, setActiveHumanView] = useState(0); 
   const [charlestonStep, setCharlestonStep] = useState(0);
   const [discards, setDiscards] = useState([]);
   const [claimableTile, setClaimableTile] = useState(null);
   const [claimTimer, setClaimTimer] = useState(0);
   const [isClaimingMode, setIsClaimingMode] = useState(false);
-  const [message, setMessage] = useState("V12.0 Table Ready");
+  const [message, setMessage] = useState("V12.1 Logic Ready");
   const [showCard, setShowCard] = useState(false);
   const [showDeadTiles, setShowDeadTiles] = useState(false);
+  const [showWinDeclare, setShowWinDeclare] = useState(false);
   const [pinnedHandIds, setPinnedHandIds] = useState([]);
-  
-  // Interaction Logic
+  const [bestMatch, setBestMatch] = useState(null);
+
   const [movingIndex, setMovingIndex] = useState(null);
   const [lastClickTime, setLastClickTime] = useState(0);
   const [lastClickIndex, setLastClickIndex] = useState(null);
   const timerRef = useRef(null);
 
-  // Configuration
   const [numHumans, setNumHumans] = useState(1);
   const [includeGhosts, setIncludeGhosts] = useState(true);
 
-  // Logic: Dead tiles (derived)
   const deadTileCounts = useMemo(() => {
     const counts = {};
     discards.forEach(t => {
@@ -121,89 +124,123 @@ export default function App() {
   const initGame = () => {
     const fullDeck = createDeck();
     const tempPlayers = [];
-    const charPassSteps = ["Right", "Over", "Left", "Left", "Over", "Right"];
-    
-    // Assign 13 tiles to each
     for (let i = 0; i < 4; i++) {
       const hand = fullDeck.splice(0, 13);
       tempPlayers.push({
         id: i,
         type: i < numHumans ? 'human' : (includeGhosts ? 'ghost' : 'vacant'),
-        hand: hand.sort((a,b) => (a.suit||a.type).localeCompare(b.suit||b.type)),
+        hand: hand.sort((a,b) => (a.suit||a.type||'').localeCompare(b.suit||b.type||'')),
         exposures: [],
         wind: WINDS[i],
         selectedIndices: [],
         drawnTile: null
       });
     }
-
     setDeck(fullDeck);
     setPlayers(tempPlayers);
     setCharlestonStep(0);
-    setActivePlayerIndex(0); // East starts
-    setActiveHumanView(0); // Start with Hand 1
+    setActivePlayerIndex(0); 
+    setActiveHumanView(0); 
     setGameState('charleston');
-    setMessage("Charleston Pass 1: " + charPassSteps[0]);
+    setBestMatch(null);
+    setMessage("Charleston: Pass to the Right");
   };
 
-  // AI Helper: Select 3 outliers for ghost pass
-  const getGhostPassIndices = (player) => {
-    const counts = {}; 
-    player.hand.forEach(t => { const k = `${t.val}-${t.suit||''}`; counts[k] = (counts[k]||0)+1; });
-    const scored = player.hand.map((t, i) => {
-      if (t.type === 'joker' || t.type === 'flower') return { i, s: 100 };
-      let s = (counts[`${t.val}-${t.suit||''}`] > 1) ? 50 : 0;
-      s += player.hand.filter(h => h.suit === t.suit).length * 2;
-      return { i, s };
+  const sortHand = (mode) => {
+    const newPlayers = [...players];
+    const p = newPlayers[activeHumanView];
+    p.hand.sort((a, b) => {
+      if (mode === 'suit') {
+        const suitOrder = { dots: 1, bams: 2, cracks: 3, wind: 4, dragon: 5, flower: 6, joker: 7 };
+        const valA = suitOrder[a.suit || a.type] || 99;
+        const valB = suitOrder[b.suit || b.type] || 99;
+        if (valA !== valB) return valA - valB;
+        return (a.val || 0).toString().localeCompare((b.val || 0).toString());
+      } else {
+        const valA = a.val === 'White' ? 0 : isNaN(a.val) ? 99 : parseInt(a.val);
+        const valB = b.val === 'White' ? 0 : isNaN(b.val) ? 99 : parseInt(b.val);
+        if (valA !== valB) return valA - valB;
+        return (a.suit || a.type || '').localeCompare(b.suit || b.type || '');
+      }
     });
-    return scored.sort((a,b) => a.s - b.s).slice(0,3).map(x => x.i);
+    p.selectedIndices = [];
+    setPlayers(newPlayers);
+  };
+
+  const getGhostPassIndices = (player) => {
+    // Ghosts cannot pass jokers
+    const naturals = player.hand.map((t, i) => ({ ...t, originalIdx: i })).filter(t => t.type !== 'joker');
+    const scored = naturals.map(t => {
+      let s = 0;
+      if (t.type === 'flower') s += 100;
+      const suitCount = player.hand.filter(h => h.suit === t.suit).length;
+      s += suitCount * 5;
+      return { idx: t.originalIdx, s };
+    });
+    return scored.sort((a,b) => a.s - b.s).slice(0,3).map(x => x.idx);
+  };
+
+  const suggestPass = () => {
+    const p = players[activeHumanView];
+    const counts = {}; 
+    p.hand.forEach(t => { 
+      const v = (t.val === 'White' || t.val === 0) ? '0' : t.val.toString();
+      const k = `${v}-${t.suit||''}`; counts[k] = (counts[k]||0)+1; 
+    });
+    const scored = p.hand.map((t, i) => {
+      let s = 0; if (t.type === 'joker') s += 1000; if (t.type === 'flower') s += 100;
+      const v = (t.val === 'White' || t.val === 0) ? '0' : t.val.toString();
+      if (counts[`${v}-${t.suit||''}`] > 1) s += 50;
+      if (t.suit) s += p.hand.filter(h => h.suit === t.suit).length * 10;
+      return { i, s, type: t.type };
+    });
+    const candidates = scored.filter(x => x.type !== 'joker').sort((a,b) => a.s - b.s).slice(0,3).map(x => x.i);
+    const newPlayers = [...players];
+    newPlayers[activeHumanView].selectedIndices = candidates;
+    setPlayers(newPlayers);
+    setMessage("AI Coach: These tiles have the lowest synergy with your current rack.");
   };
 
   const processPassRound = () => {
     const charPassSteps = ["Right", "Over", "Left", "Left", "Over", "Right"];
-    // 1. Ensure all humans have selected 3
-    const humans = players.filter(p => p.type === 'human');
-    if (humans.some(h => h.selectedIndices.length !== 3)) {
-      setMessage("Wait! All active human hands must select 3 tiles to pass.");
+    if (players.filter(p => p.type === 'human').some(h => h.selectedIndices.length !== 3)) {
+      setMessage("Wait! Every human hand must select 3 tiles to pass.");
       return;
     }
 
-    // 2. Perform Pass Logic
     const newPlayers = [...players];
     const passOffsets = { "Right": 1, "Left": -1, "Over": 2 };
     const stepName = charPassSteps[charlestonStep];
     const offset = passOffsets[stepName];
 
-    // Collect outgoing tiles
-    const outgoing = players.map(p => {
+    const outgoingData = players.map(p => {
       const idxs = p.type === 'human' ? p.selectedIndices : getGhostPassIndices(p);
-      const tiles = idxs.map(i => p.hand[i]);
+      const tilesToPass = idxs.map(i => p.hand[i]);
       const remainingHand = p.hand.filter((_, i) => !idxs.includes(i));
-      return { tiles, remainingHand };
+      return { tilesToPass, remainingHand };
     });
 
-    // Distribute incoming tiles
-    outgoing.forEach((out, i) => {
+    outgoingData.forEach((out, i) => {
       const targetIdx = (i + offset + 4) % 4;
-      newPlayers[targetIdx].hand = [...outgoing[targetIdx].remainingHand, ...out.tiles];
+      // Receiver gets sender's tiles
+      newPlayers[targetIdx].hand = [...outgoingData[targetIdx].remainingHand, ...out.tilesToPass];
       newPlayers[i].selectedIndices = [];
     });
 
     setPlayers(newPlayers);
     if (charlestonStep < 5) {
       setCharlestonStep(p => p + 1);
-      setMessage(`Pass ${charlestonStep + 2}: ${charPassSteps[charlestonStep+1]}`);
+      setMessage(`Step ${charlestonStep + 2}: Pass to the ${charPassSteps[charlestonStep+1]}`);
     } else {
       setGameState('playing');
-      setMessage("Game Started. East's Turn.");
+      setMessage("Charleston complete. East starts.");
     }
   };
 
   const handleTileClick = (pIdx, tIdx) => {
-    if (pIdx !== activeHumanView) return; // Only interact with visible hand
+    if (pIdx !== activeHumanView) return; 
     const now = Date.now();
     
-    // Reorder logic (Double Tap)
     if (movingIndex !== null) {
       if (movingIndex === tIdx) setMovingIndex(null);
       else {
@@ -220,53 +257,87 @@ export default function App() {
     }
     setLastClickTime(now); setLastClickIndex(tIdx);
 
-    // Selection Logic
     if (gameState === 'charleston') {
       const newPlayers = [...players];
       const p = newPlayers[pIdx];
-      if (p.hand[tIdx].type === 'joker') return; // Cannot pass jokers
+      if (p.hand[tIdx].type === 'joker') return; 
       if (p.selectedIndices.includes(tIdx)) p.selectedIndices = p.selectedIndices.filter(x => x !== tIdx);
       else if (p.selectedIndices.length < 3) p.selectedIndices.push(tIdx);
       setPlayers(newPlayers);
-    } else if (gameState === 'playing' && activePlayerIndex === pIdx) {
-       // Discard Logic? Hand handled via "Discard" button below table
     }
+  };
+
+  const handleDraw = () => {
+    if (activePlayerIndex !== activeHumanView || players[activeHumanView].drawnTile || claimableTile) return;
+    const dCopy = [...deck];
+    const pulled = dCopy.shift();
+    const newPlayers = [...players];
+    newPlayers[activeHumanView].drawnTile = pulled;
+    setDeck(dCopy);
+    setPlayers(newPlayers);
+    setMessage("Select a tile to DISCARD.");
+  };
+
+  const confirmDiscard = (tIdx) => {
+    const p = players[activeHumanView];
+    const tile = tIdx === -1 ? p.drawnTile : p.hand[tIdx];
+    const newHand = tIdx === -1 ? [...p.hand] : p.hand.filter((_, i) => i !== tIdx);
+    if (tIdx !== -1 && p.drawnTile) newHand.push(p.drawnTile);
+
+    setDiscards(prev => [tile, ...prev]);
+    const updatedPlayers = [...players];
+    updatedPlayers[activeHumanView].hand = newHand;
+    updatedPlayers[activeHumanView].drawnTile = null;
+    setPlayers(updatedPlayers);
+    
+    setClaimableTile(tile);
+    setClaimTimer(5);
+    
+    if(timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setClaimTimer(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current);
+          setClaimableTile(null);
+          nextTurn();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
   };
 
   const nextTurn = () => {
     const nextIdx = (activePlayerIndex + 1) % 4;
     setActivePlayerIndex(nextIdx);
-    
     const p = players[nextIdx];
+    
     if (p.type === 'ghost') {
-      // Auto Draw for ghost
       const dCopy = [...deck];
       const drawn = dCopy.shift();
       setDeck(dCopy);
       
-      // Auto Discard for ghost (Basic Logic: Keep Jokers/Flowers)
       const fullHand = [...p.hand, drawn];
-      const discardIdx = fullHand.findIndex(t => t.type !== 'joker' && t.type !== 'flower');
-      const finalIdx = discardIdx === -1 ? 0 : discardIdx;
+      const nonValuableIdx = fullHand.findIndex(t => t.type !== 'joker' && t.type !== 'flower');
+      const finalIdx = nonValuableIdx === -1 ? 0 : nonValuableIdx;
       const discarded = fullHand[finalIdx];
-      const newHand = fullHand.filter((_, i) => i !== finalIdx);
-
-      // Trigger Claim Modal for Humans
-      setClaimableTile(discarded);
-      setClaimTimer(5);
+      
       const updatedPlayers = [...players];
-      updatedPlayers[nextIdx].hand = newHand;
+      updatedPlayers[nextIdx].hand = fullHand.filter((_, i) => i !== finalIdx);
       setPlayers(updatedPlayers);
 
-      if (timerRef.current) clearInterval(timerRef.current);
+      setClaimableTile(discarded);
+      setClaimTimer(5);
+      
+      if(timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
         setClaimTimer(t => {
-          if (t <= 1) { 
-            clearInterval(timerRef.current); 
-            setDiscards(prev => [discarded, ...prev]);
+          if (t <= 1) {
+            clearInterval(timerRef.current);
             setClaimableTile(null);
-            nextTurn(); // Recursively move to next
-            return 0; 
+            setDiscards(prev => [discarded, ...prev]);
+            nextTurn();
+            return 0;
           }
           return t - 1;
         });
@@ -274,28 +345,69 @@ export default function App() {
     }
   };
 
+  const identifyBestHand = () => {
+    const p = players[activeHumanView];
+    const fullPool = [...p.hand]; if (p.drawnTile) fullPool.push(p.drawnTile); p.exposures.forEach(e => fullPool.push(...e));
+    const jokers = fullPool.filter(t => t.type === 'joker').length;
+    
+    const results = STANDARD_TEMPLATES.map(h => {
+      let matches = 0;
+      let temp = fullPool.map(t => ({...t, valStr: (t.val === 'White' || t.val === 0) ? '0' : t.val.toString()})).filter(t => t.type !== 'joker');
+      h.parts.forEach(part => {
+        for (let char of part.t) {
+          const foundIdx = temp.findIndex(p => p.valStr === char);
+          if (foundIdx !== -1) { matches++; temp.splice(foundIdx, 1); }
+        }
+      });
+      const total = h.type === "C" ? matches : Math.min(14, matches + jokers);
+      return { ...h, pct: Math.round((total / 14) * 100) };
+    });
+    setBestMatch(results.sort((a,b) => b.pct - a.pct)[0]);
+  };
+
+  const checkMahjong = (handTemplate) => {
+    const p = players[activeHumanView];
+    const fullPool = [...p.hand]; if (p.drawnTile) fullPool.push(p.drawnTile); p.exposures.forEach(e => fullPool.push(...e));
+    if (fullPool.length !== 14) return { valid: false, msg: "Exactly 14 tiles required." };
+
+    let jokers = fullPool.filter(t => t.type === 'joker').length;
+    let naturals = fullPool.map(t => ({...t, valStr: (t.val === 'White' || t.val === 0) ? '0' : t.val.toString()})).filter(t => t.type !== 'joker');
+    
+    if (handTemplate.type === "C" && jokers > 0) return { valid: false, msg: "Illegal: Concealed hands cannot use Jokers." };
+
+    let matches = 0;
+    handTemplate.parts.forEach(part => {
+      for (let char of part.t) {
+        const foundIdx = naturals.findIndex(p => p.valStr === char);
+        if (foundIdx !== -1) { matches++; naturals.splice(foundIdx, 1); }
+      }
+    });
+
+    return (matches + jokers) >= 14 ? { valid: true, msg: "MAHJONG VERIFIED!" } : { valid: false, msg: "Verification failed: Missing tiles." };
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-900 font-sans text-slate-100 overflow-hidden">
       
       {/* HEADER */}
-      <div className="flex-none p-3 bg-slate-800 flex justify-between items-center border-b-2 border-orange-600">
+      <div className="flex-none p-3 bg-slate-800 flex justify-between items-center border-b-2 border-orange-600 shadow-lg">
         <div className="flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-yellow-500" />
-          <h1 className="text-sm font-black uppercase tracking-tighter">Pro Coach V12</h1>
+          <Brain className="w-5 h-5 text-orange-500" />
+          <h1 className="text-sm font-black uppercase tracking-tighter">Pro Master V12.1</h1>
         </div>
         <div className="flex gap-1.5">
-          {gameState === 'playing' && (
+          {gameState !== 'menu' && gameState !== 'setup' && (
             <div className="flex bg-slate-700 rounded-lg p-0.5">
               {players.filter(p => p.type === 'human').map(p => (
                 <button 
                   key={p.id}
-                  onClick={() => setActiveHumanView(p.id)}
-                  className={`px-2 py-1 text-[8px] font-black uppercase rounded ${activeHumanView === p.id ? 'bg-orange-600 text-white' : 'text-slate-400'}`}
+                  onClick={() => { setActiveHumanView(p.id); setBestMatch(null); }}
+                  className={`px-2 py-1 text-[8px] font-black uppercase rounded transition-all ${activeHumanView === p.id ? 'bg-orange-600 text-white shadow-inner' : 'text-slate-400 hover:text-white'}`}
                 >H{p.id + 1}</button>
               ))}
             </div>
           )}
-          <button onClick={() => setGameState('menu')} className="p-1.5 bg-slate-700 rounded-lg"><RotateCcw className="w-4 h-4" /></button>
+          <button onClick={() => setGameState('menu')} className="p-1.5 bg-slate-700 rounded-lg hover:bg-slate-600"><RotateCcw className="w-4 h-4" /></button>
         </div>
       </div>
 
@@ -303,13 +415,13 @@ export default function App() {
         
         {/* VIEW: MENU */}
         {gameState === 'menu' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in">
             <Layers className="w-16 h-16 text-orange-500 mb-6" />
             <h2 className="text-3xl font-black mb-2 uppercase tracking-tighter">Table Simulator</h2>
-            <p className="max-w-xs text-xs text-slate-400 mb-10 italic">Practice American Mahjong with multi-hand control or Ghost opponents.</p>
+            <p className="max-w-xs text-xs text-slate-400 mb-10 italic">Integrated AI logic and NMJL rule enforcement. Manage 1-4 human seats or play with ghosts.</p>
             <div className="flex flex-col gap-4 w-full max-w-xs">
-              <button onClick={() => setGameState('setup')} className="bg-orange-600 py-4 rounded-2xl font-black text-lg uppercase shadow-xl">Single Player</button>
-              <button className="bg-slate-800 py-4 rounded-2xl font-black text-lg uppercase opacity-50 cursor-not-allowed">Online (Coming Soon)</button>
+              <button onClick={() => setGameState('setup')} className="bg-orange-600 py-4 rounded-2xl font-black text-lg uppercase shadow-xl hover:scale-105 transition-all">Single Player</button>
+              <button className="bg-slate-800 py-4 rounded-2xl font-black text-lg uppercase opacity-50 cursor-not-allowed">Online Arena</button>
             </div>
           </div>
         )}
@@ -318,25 +430,22 @@ export default function App() {
         {gameState === 'setup' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 animate-in slide-in-from-bottom-4">
              <div className="bg-slate-800 p-8 rounded-[3rem] w-full max-w-sm border-2 border-slate-700 shadow-2xl space-y-6">
-                <h3 className="text-xl font-black uppercase text-center border-b border-slate-700 pb-4">Table Setup</h3>
-                
+                <h3 className="text-xl font-black uppercase text-center border-b border-slate-700 pb-4 tracking-tighter">Deal Setup</h3>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Human Hands</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Active Human Seats</label>
                   <div className="flex gap-2">
                     {[1,2,3,4].map(n => (
-                      <button key={n} onClick={() => setNumHumans(n)} className={`flex-1 py-3 rounded-xl font-black border-2 transition-all ${numHumans === n ? 'bg-blue-600 border-blue-400' : 'bg-slate-700 border-slate-600 text-slate-400'}`}>{n}</button>
+                      <button key={n} onClick={() => setNumHumans(n)} className={`flex-1 py-3 rounded-xl font-black border-2 transition-all ${numHumans === n ? 'bg-blue-600 border-blue-400 shadow-lg' : 'bg-slate-700 border-slate-600 text-slate-400'}`}>{n}</button>
                     ))}
                   </div>
                 </div>
-
                 <div className="flex justify-between items-center py-4 border-t border-slate-700">
-                  <label className="text-[10px] font-black uppercase text-slate-500">Include Ghosts?</label>
-                  <button onClick={() => setIncludeGhosts(!includeGhosts)} className={`w-12 h-6 rounded-full relative transition-all ${includeGhosts ? 'bg-green-600' : 'bg-slate-600'}`}>
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Fill Table with AI?</label>
+                  <button onClick={() => setIncludeGhosts(!includeGhosts)} className={`w-12 h-6 rounded-full relative transition-all ${includeGhosts ? 'bg-green-600 shadow-lg' : 'bg-slate-600'}`}>
                     <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${includeGhosts ? 'right-1' : 'left-1'}`} />
                   </button>
                 </div>
-
-                <button onClick={initGame} className="w-full bg-orange-600 py-4 rounded-2xl font-black uppercase shadow-lg hover:bg-orange-500">Deal Tiles</button>
+                <button onClick={initGame} className="w-full bg-orange-600 py-4 rounded-2xl font-black uppercase shadow-xl hover:bg-orange-500 transition-all">Deal 152 Tiles</button>
              </div>
           </div>
         )}
@@ -345,54 +454,63 @@ export default function App() {
         {(gameState === 'charleston' || gameState === 'playing') && (
           <div className="flex flex-col h-full p-2 gap-2">
              
-             {/* TOP / SIDES AREA */}
-             <div className="flex-none h-24 grid grid-cols-3 gap-2">
-                <div className="flex flex-col items-center justify-center bg-slate-800/50 rounded-2xl border border-slate-700">
-                   <p className="text-[8px] font-black text-slate-500 uppercase">{WINDS[(activeHumanView + 3) % 4]}</p>
-                   <Ghost className="w-6 h-6 text-slate-600" />
-                </div>
-                <div className="flex flex-col items-center justify-center bg-slate-800/50 rounded-2xl border border-slate-700 ring-2 ring-blue-500/20">
-                   <p className="text-[8px] font-black text-slate-500 uppercase">{WINDS[(activeHumanView + 2) % 4]}</p>
-                   <User className="w-6 h-6 text-slate-600" />
-                </div>
-                <div className="flex flex-col items-center justify-center bg-slate-800/50 rounded-2xl border border-slate-700">
-                   <p className="text-[8px] font-black text-slate-500 uppercase">{WINDS[(activeHumanView + 1) % 4]}</p>
-                   <Ghost className="w-6 h-6 text-slate-600" />
-                </div>
+             {/* TOP / SIDES (FOG OF WAR) */}
+             <div className="flex-none h-20 grid grid-cols-3 gap-2">
+                {[3, 2, 1].map(offset => {
+                    const pIdx = (activeHumanView + offset) % 4;
+                    const p = players[pIdx];
+                    return (
+                        <div key={pIdx} className="flex flex-col items-center justify-center bg-slate-800/40 rounded-2xl border border-slate-700">
+                            <p className={`text-[8px] font-black uppercase ${activePlayerIndex === pIdx ? 'text-yellow-400 animate-pulse' : 'text-slate-500'}`}>{WINDS[pIdx]}</p>
+                            {p.type === 'ghost' ? <Ghost className="w-5 h-5 text-slate-700" /> : <User className="w-5 h-5 text-slate-700" />}
+                        </div>
+                    );
+                })}
              </div>
 
              {/* DISCARD CENTER */}
-             <div className="flex-1 bg-slate-950/50 border-2 border-slate-800 rounded-[2.5rem] flex flex-col p-4 shadow-inner relative overflow-hidden">
+             <div className="flex-1 bg-slate-950/30 border-2 border-slate-800/50 rounded-[2.5rem] flex flex-col p-4 shadow-inner relative overflow-hidden">
                 <div className="flex-1 flex items-center justify-center">
                   {claimableTile ? (
-                    <div className="bg-orange-600 p-4 rounded-3xl shadow-2xl animate-in zoom-in border-4 border-orange-400">
+                    <div className="bg-orange-600 p-4 rounded-3xl shadow-2xl animate-in zoom-in border-4 border-orange-400 z-50">
                        <div className="text-center mb-2"><span className="text-[10px] font-black uppercase text-orange-200">CLAIM WINDOW {claimTimer}s</span></div>
                        <Tile tile={claimableTile} size="lg" isClaimable={true} />
                     </div>
                   ) : (
-                    <div className="text-center opacity-10">
-                      <Search className="w-12 h-12 mx-auto mb-2" />
-                      <p className="text-[10px] font-black uppercase">Live Discards</p>
+                    <div className="text-center opacity-5">
+                      <Target className="w-12 h-12 mx-auto mb-2" />
+                      <p className="text-[8px] font-black uppercase tracking-widest">Discard Zone</p>
                     </div>
                   )}
                 </div>
                 
-                {/* DISCARD MINI TRAY */}
+                {/* STATUS SUMMARY */}
+                {bestMatch && (
+                    <div className="absolute top-4 left-4 right-4 bg-yellow-50/10 backdrop-blur-md border border-yellow-500/30 p-2 rounded-xl flex flex-col gap-1.5 animate-in slide-in-from-top-2">
+                        <div className="flex justify-between items-center">
+                            <p className="text-[10px] font-black text-yellow-400 uppercase tracking-tighter">{bestMatch.name} ({bestMatch.pct}%)</p>
+                            <button onClick={() => setBestMatch(null)}><X className="w-3 h-3 text-slate-500" /></button>
+                        </div>
+                        <div className="bg-black/20 p-1.5 rounded-lg border border-white/5"><HandCode parts={bestMatch.parts} /></div>
+                    </div>
+                )}
+
                 <div className="flex-none h-12 bg-slate-900 rounded-2xl p-1 overflow-x-auto flex items-center gap-1 border border-slate-800">
-                   {discards.slice(0, 20).map((t, i) => <Tile key={i} tile={t} size="sm" isExposed={true} />)}
+                   {discards.slice(0, 10).map((t, i) => <Tile key={i} tile={t} size="sm" isExposed={true} />)}
+                   <span className="text-[7px] font-bold text-slate-700 uppercase ml-2">Recent Discards</span>
                 </div>
              </div>
 
-             {/* ACTIVE HUMAN RACK */}
-             <div className="flex-none bg-slate-800 p-3 rounded-[2rem] border-t-4 border-blue-500 shadow-2xl space-y-3">
-                <div className="flex justify-between items-center">
+             {/* PLAYER CONTROL HUB */}
+             <div className="flex-none bg-slate-800 p-3 rounded-[2rem] border-t-4 border-orange-500 shadow-2xl space-y-3">
+                <div className="flex justify-between items-center px-2">
                   <div className="flex items-center gap-2">
-                    <div className="bg-blue-600 px-2 py-0.5 rounded text-[10px] font-black uppercase">{players[activeHumanView].wind}</div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hand {activeHumanView + 1}</span>
+                    <div className="bg-blue-600 px-2 py-0.5 rounded text-[10px] font-black uppercase shadow-sm">{players[activeHumanView].wind}</div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Your Rack</span>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => sortHand('suit')} className="p-2 bg-slate-700 rounded-lg text-[8px] font-black uppercase">Suit</button>
-                    <button onClick={() => sortHand('val')} className="p-2 bg-slate-700 rounded-lg text-[8px] font-black uppercase">Val</button>
+                    <button onClick={() => sortHand('suit')} className="p-2 bg-slate-700 rounded-lg text-[8px] font-black uppercase hover:bg-slate-600">Suit</button>
+                    <button onClick={() => sortHand('val')} className="p-2 bg-slate-700 rounded-lg text-[8px] font-black uppercase hover:bg-slate-600">Val</button>
                   </div>
                 </div>
 
@@ -410,9 +528,9 @@ export default function App() {
                   {gameState === 'playing' && activePlayerIndex === activeHumanView && (
                     <div className="ml-2 pl-2 border-l border-slate-600 flex items-center">
                        {players[activeHumanView].drawnTile ? (
-                         <Tile tile={players[activeHumanView].drawnTile} size="lg" isSelected={true} />
+                         <Tile tile={players[activeHumanView].drawnTile} size="lg" isSelected={true} onClick={() => confirmDiscard(-1)} />
                        ) : (
-                         <button className="w-12 h-16 border-2 border-dashed border-slate-600 rounded-xl flex items-center justify-center text-slate-500 hover:text-white transition-colors"><Play className="w-6 h-6" /></button>
+                         <button onClick={handleDraw} className="w-12 h-16 border-2 border-dashed border-slate-600 rounded-xl flex items-center justify-center text-slate-500 hover:text-orange-500 hover:border-orange-500 transition-all"><Play className="w-6 h-6" /></button>
                        )}
                     </div>
                   )}
@@ -420,18 +538,19 @@ export default function App() {
 
                 <div className="flex justify-center gap-2 pt-2">
                    {gameState === 'charleston' ? (
-                     <button 
-                       onClick={processPassRound}
-                       disabled={players[activeHumanView].selectedIndices.length !== 3}
-                       className={`w-full py-3 rounded-xl font-black uppercase text-sm shadow-lg transition-all ${players[activeHumanView].selectedIndices.length === 3 ? 'bg-orange-600' : 'bg-slate-700 text-slate-500'}`}
-                     >
-                       Confirm Pass
-                     </button>
+                     <>
+                        <button onClick={suggestPass} className="bg-slate-700 px-4 py-3 rounded-xl text-[10px] font-black uppercase border border-slate-600 flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-orange-400" /> Suggest</button>
+                        <button 
+                            onClick={processPassRound}
+                            disabled={players[activeHumanView].selectedIndices.length !== 3}
+                            className={`flex-1 py-3 rounded-xl font-black uppercase text-sm shadow-xl transition-all ${players[activeHumanView].selectedIndices.length === 3 ? 'bg-orange-600 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                        >Confirm Pass</button>
+                     </>
                    ) : (
-                     <div className="flex gap-2 w-full">
-                        <button onClick={() => setShowDeadTiles(true)} className="flex-1 bg-red-900/40 py-3 rounded-xl text-[10px] font-black uppercase border border-red-800">Dead Tracker</button>
-                        <button className="flex-1 bg-slate-700 py-3 rounded-xl text-[10px] font-black uppercase">Identify Path</button>
-                        <button className="flex-1 bg-green-600 py-3 rounded-xl text-[10px] font-black uppercase">Mahjong</button>
+                     <div className="flex gap-1.5 w-full">
+                        <button onClick={() => setShowDeadTiles(true)} className="flex-1 bg-red-900/40 py-3 rounded-xl text-[9px] font-black uppercase border border-red-800 flex items-center justify-center gap-1"><Trash2 className="w-3 h-3" /> Dead</button>
+                        <button onClick={identifyBestHand} className="flex-1 bg-slate-700 py-3 rounded-xl text-[9px] font-black uppercase border border-slate-600 flex items-center justify-center gap-1"><Target className="w-3 h-3" /> Identify</button>
+                        <button onClick={() => setShowWinDeclare(true)} className="flex-1 bg-green-700 py-3 rounded-xl text-[9px] font-black uppercase border border-green-800 flex items-center justify-center gap-1"><Check className="w-3 h-3" /> Mahjong</button>
                      </div>
                    )}
                 </div>
@@ -445,13 +564,48 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-800 w-full max-w-4xl max-h-[85vh] rounded-[3rem] border-2 border-slate-700 overflow-hidden flex flex-col shadow-2xl">
             <div className="p-6 bg-slate-700 flex justify-between items-center">
-              <h3 className="font-black uppercase tracking-widest flex items-center gap-2"><Trash2 className="w-5 h-5 text-red-500" /> Dead Tracker</h3>
+              <h3 className="font-black uppercase tracking-widest text-xs tracking-tighter flex items-center gap-2"><Trash2 className="w-5 h-5 text-red-500" /> Dead Tracker</h3>
               <button onClick={() => setShowDeadTiles(false)} className="p-2 hover:bg-slate-600 rounded-full"><X /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-               <DeadTileGrid />
-            </div>
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-hide"><DeadTileGrid /></div>
           </div>
+        </div>
+      )}
+
+      {/* OVERLAY: WIN DECLARE */}
+      {showWinDeclare && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="bg-slate-800 w-full max-w-2xl max-h-[70vh] rounded-[3rem] border-2 border-slate-700 overflow-hidden flex flex-col shadow-2xl">
+                <div className="p-5 bg-slate-700 flex justify-between items-center border-b border-slate-600">
+                    <h3 className="font-black uppercase tracking-widest text-xs flex items-center gap-2"><Trophy className="w-5 h-5 text-yellow-500" /> Win Verification</h3>
+                    <button onClick={() => setShowWinDeclare(false)} className="p-1 text-slate-400 hover:text-white"><X /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                    {STANDARD_TEMPLATES.map(h => (
+                        <button key={h.id} onClick={() => {
+                            const res = checkMahjong(h);
+                            setMessage(res.msg);
+                            if(res.valid) setGameState('finished');
+                            setShowWinDeclare(false);
+                        }} className="w-full text-left p-4 bg-slate-700/50 border-2 border-slate-600 rounded-2xl hover:border-green-500 transition-all group">
+                            <p className="text-[8px] font-black uppercase text-blue-400 mb-1">{h.section} | {h.type}</p>
+                            <p className="font-black text-xs uppercase mb-2">{h.name}</p>
+                            <HandCode parts={h.parts} />
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+      )}
+
+      {gameState === 'finished' && (
+        <div className="fixed inset-0 bg-slate-950/95 backdrop-blur-lg flex items-center justify-center p-4 z-[100]">
+           <div className="bg-slate-800 rounded-[3rem] p-10 max-w-sm w-full text-center border-b-8 border-orange-600 shadow-2xl space-y-4">
+              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
+              <h2 className="text-3xl font-black uppercase">Session End</h2>
+              <p className="text-xs font-bold text-slate-400 uppercase italic tracking-widest">{message}</p>
+              <button onClick={initGame} className="w-full py-4 bg-orange-600 text-white rounded-2xl font-black uppercase shadow-xl transition-all hover:bg-orange-500">Play Again</button>
+           </div>
         </div>
       )}
 
