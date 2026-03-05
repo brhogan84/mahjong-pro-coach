@@ -44,7 +44,7 @@ const Tile = ({ tile, onClick, isSelected, size = "md", disabled = false, isExpo
   );
 
   const getStyle = () => {
-    if (disabled) return 'bg-gray-100 border-gray-200 text-gray-400 opacity-40 grayscale cursor-not-allowed';
+    if (disabled) return 'bg-gray-100 border-gray-200 text-gray-400 opacity-40 grayscale cursor-not-allowed shadow-none';
     if (isMoving) return 'bg-blue-100 border-blue-500 ring-4 ring-blue-300 scale-110 -translate-y-4 z-50 shadow-2xl';
     if (isExposed) return 'bg-slate-200 border-slate-400 text-slate-700 shadow-inner scale-90';
     if (tile.type === 'flower') return 'bg-pink-50 border-pink-300 text-pink-700';
@@ -203,16 +203,21 @@ export default function App() {
 
   const processPassRound = () => {
     const charPassSteps = ["Right", "Over", "Left", "Left", "Over", "Right"];
-    if (players.filter(p => p.type === 'human').some(h => h.selectedIndices.length !== 3)) {
-      setMessage("Wait! Every human hand must select 3 tiles to pass.");
+    
+    // Check all humans
+    const humansStillSelecting = players.filter(p => p.type === 'human' && p.selectedIndices.length !== 3);
+    if (humansStillSelecting.length > 0) {
+      const handIds = humansStillSelecting.map(h => h.id + 1).join(", ");
+      setMessage(`Selection Incomplete: Hand(s) ${handIds} still need tiles.`);
       return;
     }
 
-    const newPlayers = [...players];
+    const newPlayers = JSON.parse(JSON.stringify(players));
     const passOffsets = { "Right": 1, "Left": -1, "Over": 2 };
-    const stepName = charPassSteps[charlestonStep];
-    const offset = passOffsets[stepName];
+    const currentStepName = charPassSteps[charlestonStep];
+    const offset = passOffsets[currentStepName];
 
+    // Collect outgoing tiles and remaining hands for ALL players
     const outgoingData = players.map(p => {
       const idxs = p.type === 'human' ? p.selectedIndices : getGhostPassIndices(p);
       const tilesToPass = idxs.map(i => p.hand[i]);
@@ -220,10 +225,10 @@ export default function App() {
       return { tilesToPass, remainingHand };
     });
 
+    // Distribute
     outgoingData.forEach((out, i) => {
-      const targetIdx = (i + offset + 4) % 4;
-      // Receiver gets sender's tiles
-      newPlayers[targetIdx].hand = [...outgoingData[targetIdx].remainingHand, ...out.tilesToPass];
+      const receiverIdx = (i + offset + 4) % 4;
+      newPlayers[receiverIdx].hand = [...outgoingData[receiverIdx].remainingHand, ...out.tilesToPass];
       newPlayers[i].selectedIndices = [];
     });
 
@@ -567,7 +572,34 @@ export default function App() {
               <h3 className="font-black uppercase tracking-widest text-xs tracking-tighter flex items-center gap-2"><Trash2 className="w-5 h-5 text-red-500" /> Dead Tracker</h3>
               <button onClick={() => setShowDeadTiles(false)} className="p-2 hover:bg-slate-600 rounded-full"><X /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 scrollbar-hide"><DeadTileGrid /></div>
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+               {/* Categories for dead tile display */}
+               <div className="space-y-6">
+                {['Dots', 'Bams', 'Cracks', 'Winds', 'Dragons', 'Special'].map(cat => (
+                    <div key={cat}>
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b pb-1 border-slate-700">{cat}</h4>
+                        <div className="flex flex-wrap gap-1">
+                            {/* Standard set display with dead counts */}
+                            {cat === 'Special' ? (
+                                <>
+                                    <Tile tile={{val:'F', type:'flower'}} size="sm" countOverlay={deadTileCounts['F-flower']} />
+                                    <Tile tile={{val:'J', type:'joker'}} size="sm" countOverlay={deadTileCounts['J-joker']} />
+                                </>
+                            ) : (
+                                [1,2,3,4,5,6,7,8,9].map(n => {
+                                    const val = (cat === 'Winds' || cat === 'Dragons') ? ['N','S','E','W','Green','Red','White'][n-1] : n;
+                                    if (!val) return null;
+                                    const suit = cat.toLowerCase();
+                                    const type = (cat === 'Winds') ? 'wind' : (cat === 'Dragons') ? 'dragon' : 'number';
+                                    const key = `${val}-${suit === 'winds' ? 'wind' : suit === 'dragons' ? 'dragon' : suit}`;
+                                    return <Tile key={key} tile={{val, suit: type === 'number' ? suit : null, type}} size="sm" countOverlay={deadTileCounts[key]} />;
+                                })
+                            )}
+                        </div>
+                    </div>
+                ))}
+               </div>
+            </div>
           </div>
         </div>
       )}
